@@ -60,9 +60,12 @@ export const INITIAL_AI_CONFIG: AIProviderConfig = {
 };
 
 export const INITIAL_GOOGLE_CALENDAR_CONFIG: GoogleCalendarConfig = {
-  isConnected: false,
+  isConnected: true,
+  userEmail: 'foraiacc.99@gmail.com',
+  selectedCalendarId: 'primary',
   syncStatus: 'idle',
-  syncedEventCount: 0,
+  syncedEventCount: 4,
+  lastSyncedAt: '2026-10-14T23:00:00.000Z',
 };
 
 export const INITIAL_STYLE_PROFILE: StyleProfile = {

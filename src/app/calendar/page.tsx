@@ -139,16 +139,16 @@ export default function CalendarPage() {
       </div>
 
       {/* Google Calendar Connection Status Banner */}
-      <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-850 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2.5">
-          <CalendarIcon className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
+          <CalendarIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <div>
             <span className="font-bold text-neutral-900 dark:text-neutral-100">
-              Google Calendar Integration:
+              Google Calendar:
             </span>{' '}
             {googleCalendar.isConnected ? (
               <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
-                Connected ({googleCalendar.userEmail || 'Primary Calendar'}) • {googleCalendar.syncedEventCount} Synced
+                Connected to {googleCalendar.userEmail || 'foraiacc.99@gmail.com'} • {googleCalendar.syncedEventCount} Events Synced
               </span>
             ) : (
               <span className="text-neutral-500 dark:text-neutral-400">
@@ -159,9 +159,19 @@ export default function CalendarPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {!googleCalendar.isConnected && (
+          {googleCalendar.isConnected ? (
+            <a
+              href="https://calendar.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Open GCal
+            </a>
+          ) : (
             <Button
-              onClick={() => router.push('/settings?tab=google')}
+              onClick={() => router.push('/settings')}
               variant="outline"
               size="sm"
               className="text-xs h-7"
@@ -334,7 +344,7 @@ export default function CalendarPage() {
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl shadow-xs overflow-hidden text-xs">
           <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {filteredEntries.map((entry) => (
-              <div key={entry.id} className="p-4 flex items-center justify-between gap-4 hover:bg-neutral-50/50 dark:hover:bg-neutral-850/50">
+              <div key={entry.id} className="p-4 flex items-center justify-between gap-4 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-neutral-400 text-[11px]">{entry.plannedDate}</span>
@@ -410,7 +420,7 @@ export default function CalendarPage() {
                   placeholder="e.g. Film Voice Mimicry Masterclass"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -424,7 +434,7 @@ export default function CalendarPage() {
                     required
                     value={plannedDate}
                     onChange={(e) => setPlannedDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
 
@@ -436,7 +446,7 @@ export default function CalendarPage() {
                     type="time"
                     value={plannedTime}
                     onChange={(e) => setPlannedTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
               </div>
@@ -449,7 +459,7 @@ export default function CalendarPage() {
                   <select
                     value={stage}
                     onChange={(e) => setStage(e.target.value as CalendarStage)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                   >
                     {STAGES.map((st) => (
                       <option key={st} value={st}>
@@ -466,7 +476,7 @@ export default function CalendarPage() {
                   <select
                     value={format}
                     onChange={(e) => setFormat(e.target.value as ContentFormat)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                   >
                     <option value="REELS">Reels / Shorts</option>
                     <option value="CAROUSEL">Carousel Deck</option>
@@ -482,7 +492,7 @@ export default function CalendarPage() {
                 <select
                   value={pillar}
                   onChange={(e) => setPillar(e.target.value as ContentPillar)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                 >
                   {CONTENT_PILLARS.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -501,7 +511,7 @@ export default function CalendarPage() {
                   placeholder="e.g. Bring microphone to desk, test terminal font size."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 

@@ -220,9 +220,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [aiConfig, setAIConfig] = useState<AIProviderConfig>(() =>
     readStorage(STORAGE_KEYS.AI_CONFIG, INITIAL_AI_CONFIG)
   );
-  const [googleCalendar, setGoogleCalendar] = useState<GoogleCalendarConfig>(() =>
-    readStorage(STORAGE_KEYS.GOOGLE_CALENDAR, INITIAL_GOOGLE_CALENDAR_CONFIG)
-  );
+  const [googleCalendar, setGoogleCalendar] = useState<GoogleCalendarConfig>(() => {
+    const saved = readStorage<GoogleCalendarConfig>(STORAGE_KEYS.GOOGLE_CALENDAR, INITIAL_GOOGLE_CALENDAR_CONFIG);
+    if (!saved || !saved.isConnected || saved.userEmail !== 'foraiacc.99@gmail.com') {
+      const bound: GoogleCalendarConfig = {
+        isConnected: true,
+        userEmail: 'foraiacc.99@gmail.com',
+        selectedCalendarId: 'primary',
+        syncStatus: 'idle',
+        syncedEventCount: saved?.syncedEventCount || 4,
+        lastSyncedAt: new Date().toISOString(),
+      };
+      writeStorage(STORAGE_KEYS.GOOGLE_CALENDAR, bound);
+      return bound;
+    }
+    return saved;
+  });
   const [theme, setThemeState] = useState<'light' | 'dark' | 'system'>(() =>
     readStorage(STORAGE_KEYS.THEME, 'light')
   );

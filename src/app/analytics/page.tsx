@@ -279,7 +279,7 @@ export default function GrowthTrackerPage() {
           )}
         </p>
 
-        <div className="p-3 bg-neutral-50 dark:bg-neutral-850 rounded-xl border border-neutral-200/80 dark:border-neutral-800 text-[11px] text-neutral-500 space-y-1">
+        <div className="p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-200/80 dark:border-neutral-800 text-[11px] text-neutral-500 space-y-1">
           <span className="font-bold text-neutral-800 dark:text-neutral-200 block">Configurable ER Definition</span>
           <span>
             Current mode: <strong>Manual Preservation</strong>. When you enter engagement rate, the system preserves your exact calculation without inventing post-level interaction counts.
@@ -300,7 +300,7 @@ export default function GrowthTrackerPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-neutral-50 dark:bg-neutral-850 border-b border-neutral-200/80 dark:border-neutral-800 text-neutral-500 text-[11px]">
+            <thead className="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200/80 dark:border-neutral-800 text-neutral-500 text-[11px]">
               <tr>
                 <th className="px-6 py-3 font-semibold">Date</th>
                 <th className="px-4 py-3 font-semibold">Followers</th>
@@ -313,7 +313,7 @@ export default function GrowthTrackerPage() {
             </thead>
             <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {snapshots.map((snap) => (
-                <tr key={snap.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-850/50">
+                <tr key={snap.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50">
                   <td className="px-6 py-3.5 font-mono text-neutral-900 dark:text-neutral-100 font-semibold">
                     {formatDate(snap.date)}
                   </td>
@@ -375,7 +375,7 @@ export default function GrowthTrackerPage() {
                   required
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -390,7 +390,7 @@ export default function GrowthTrackerPage() {
                     min={0}
                     value={totalFollowers}
                     onChange={(e) => setTotalFollowers(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
 
@@ -404,7 +404,7 @@ export default function GrowthTrackerPage() {
                     min={0}
                     value={reach}
                     onChange={(e) => setReach(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
               </div>
@@ -420,7 +420,7 @@ export default function GrowthTrackerPage() {
                     min={0}
                     value={totalViews}
                     onChange={(e) => setTotalViews(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
 
@@ -436,7 +436,7 @@ export default function GrowthTrackerPage() {
                     max={100}
                     value={engagementRate}
                     onChange={(e) => setEngagementRate(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
               </div>
@@ -450,7 +450,7 @@ export default function GrowthTrackerPage() {
                   placeholder="e.g. Launched cold calling series; tested contrarian commands."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 

@@ -332,7 +332,7 @@ export default function CarouselStudioPage() {
                           coverSlide: { ...activeCarousel.coverSlide, headline: e.target.value },
                         })
                       }
-                      className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 font-bold"
+                      className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold"
                     />
                   </div>
                   <div>
@@ -345,7 +345,7 @@ export default function CarouselStudioPage() {
                           coverSlide: { ...activeCarousel.coverSlide, subtitle: e.target.value },
                         })
                       }
-                      className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                      className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                     />
                   </div>
                 </div>
@@ -361,7 +361,7 @@ export default function CarouselStudioPage() {
                         updated[currentSlideIndex - 1].headline = e.target.value;
                         updateCarouselProject(activeCarousel.id, { slides: updated });
                       }}
-                      className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 font-bold"
+                      className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold"
                     />
                   </div>
                   <div>
@@ -374,7 +374,7 @@ export default function CarouselStudioPage() {
                         updated[currentSlideIndex - 1].body = e.target.value;
                         updateCarouselProject(activeCarousel.id, { slides: updated });
                       }}
-                      className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                      className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                     />
                   </div>
                   <div>
@@ -387,7 +387,7 @@ export default function CarouselStudioPage() {
                         updated[currentSlideIndex - 1].visualDirection = e.target.value;
                         updateCarouselProject(activeCarousel.id, { slides: updated });
                       }}
-                      className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                      className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                     />
                   </div>
                 </div>
@@ -410,7 +410,7 @@ export default function CarouselStudioPage() {
                 rows={4}
                 value={activeCarousel.caption}
                 onChange={(e) => updateCarouselProject(activeCarousel.id, { caption: e.target.value })}
-                className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               />
             </div>
           </div>
@@ -438,7 +438,7 @@ export default function CarouselStudioPage() {
                 <button
                   key={tmpl.type}
                   onClick={() => handleCreateStorySequence(tmpl.type as StorySequence['objective'])}
-                  className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-850 hover:border-neutral-400 text-left cursor-pointer transition-colors"
+                  className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800 hover:border-neutral-400 text-left cursor-pointer transition-colors"
                 >
                   <span className="font-bold text-neutral-900 dark:text-neutral-100 block text-xs">{tmpl.label}</span>
                 </button>
