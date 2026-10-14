@@ -40,97 +40,98 @@ Return ONLY the raw JSON array. Do not include markdown code block formatting if
 
     let generated: ContentIdea[] = [];
     if (aiConfig) {
-      const response = await executeAICompletion(prompt, SYSTEM_STRATEGIST_PROMPT, aiConfig);
       try {
+        const response = await executeAICompletion(prompt, SYSTEM_STRATEGIST_PROMPT, aiConfig);
         const jsonMatch = response.match(/\[[\s\S]*\]/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
-          generated = parsed.map((item: Partial<ContentIdea>, idx: number) => ({
-            id: `idea_gen_${Date.now()}_${idx}`,
-            title: item.title || `Practical Approach to ${topic || 'Tech Systems'}`,
-            pillar: (item.pillar as ContentPillar) || (pillar as ContentPillar),
-            topic: item.topic || topic || 'Technical Workflows',
-            targetAudience: item.targetAudience || targetAudience || 'Builders & Developers',
-            format: (item.format as ContentFormat) || (format as ContentFormat),
-            hook: item.hook || `Stop doing ${topic || 'this'} the hard way. Here is the realistic fix.`,
-            mainAngle: item.mainAngle || 'Hands-on terminal or visual workflow demonstration.',
-            supportingResearch: item.supportingResearch || 'Official documentation & tested benchmarks.',
-            sourceUrls: item.sourceUrls || [],
-            evidenceNotes: item.evidenceNotes || 'Grounded in observable code behavior.',
-            estimatedProductionTime: item.estimatedProductionTime || 35,
-            priority: item.priority || 'High',
-            status: 'Inbox',
-            isAiGenerated: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }));
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            generated = parsed.map((item: Partial<ContentIdea>, idx: number) => ({
+              id: `idea_gen_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+              title: item.title || `Practical Approach to ${topic || 'Technical Systems'}`,
+              pillar: (item.pillar as ContentPillar) || (pillar as ContentPillar),
+              topic: item.topic || topic || 'Technical Workflows',
+              targetAudience: item.targetAudience || targetAudience || 'Builders & Developers',
+              format: (item.format as ContentFormat) || (format as ContentFormat),
+              hook: item.hook || `Stop doing ${topic || 'this'} the hard way. Here is the realistic fix.`,
+              mainAngle: item.mainAngle || 'Hands-on terminal or visual workflow demonstration.',
+              supportingResearch: item.supportingResearch || 'Official documentation & tested benchmarks.',
+              sourceUrls: item.sourceUrls || [],
+              evidenceNotes: item.evidenceNotes || 'Grounded in observable code behavior.',
+              estimatedProductionTime: item.estimatedProductionTime || 45,
+              priority: item.priority || 'High',
+              status: 'Inbox',
+              isAiGenerated: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }));
+          }
         }
-      } catch (parseErr) {
-        console.warn('Could not parse AI idea JSON, using rich fallback:', parseErr);
+      } catch (aiErr) {
+        console.warn('AI Idea completion/parsing skipped, generating dynamic tailored ideas:', aiErr);
       }
     }
 
     if (generated.length === 0) {
-      // Deterministic, high-grade fallbacks customized to the chosen pillar
-      generated = [
+      const topicClean = (topic || '').trim() || 'Modern AI & Web Engineering';
+      const angleTemplates = [
         {
-          id: `idea_gen_${Date.now()}_1`,
-          title: `Why Most Builders Fail at ${topic || 'Automation Pipelines'}`,
-          pillar: (pillar as ContentPillar) || 'AI_TOOLS_AND_AUTOMATION',
-          topic: topic || 'System Architecture',
-          targetAudience: targetAudience || 'Founders & Engineers',
+          title: `The Non-Obvious Framework for ${topicClean}`,
+          hook: `Stop building ${topicClean} the hard way. Here is the non-obvious architecture rule top engineers follow.`,
+          mainAngle: `A practical breakdown contrasting fragile surface-level wrappers with self-contained pipelines.`,
+          supportingResearch: `Tested on local Ollama & SQLite pipelines with 0 cloud dependencies.`,
           format: (format as ContentFormat) || 'REELS',
-          hook: `If you are trying to implement ${topic || 'automation'} without validating your data models first, stop.`,
-          mainAngle: `A critical breakdown contrasting fragile surface-level wrappers with standard local pipelines.`,
-          supportingResearch: 'Tested on local Ollama & SQLite pipelines with 0 cloud dependencies.',
-          sourceUrls: ['https://github.com/ollama/ollama'],
-          evidenceNotes: 'Grounded in actual execution logs; highlights real latency bottlenecks.',
-          estimatedProductionTime: 35,
-          priority: 'High',
-          status: 'Inbox',
-          isAiGenerated: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          time: 45,
+          priority: 'High' as const,
         },
         {
-          id: `idea_gen_${Date.now()}_2`,
-          title: `The 3 Questions I Ask on Every Website Sales Call`,
-          pillar: (pillar as ContentPillar) || 'SALES_PSYCHOLOGY_AND_CLIENT_ACQUISITION',
-          topic: 'Cold calling and client discovery for web dev',
-          targetAudience: 'Freelance developers and small agency owners',
+          title: `3 Costly Bottlenecks in ${topicClean} (And How to Fix Them)`,
+          hook: `If your ${topicClean} workflow feels slow or unpredictable, you are probably making one of these 3 mistakes.`,
+          mainAngle: `Step-by-step diagnostic audit: identifying latency bottlenecks, unvalidated schemas, and memory leaks.`,
+          supportingResearch: `Documented benchmark analysis from real production systems.`,
           format: (format as ContentFormat) || 'REELS',
-          hook: `Never ask a local business owner if they want a new website. Ask them this instead.`,
-          mainAngle: `Roleplaying cold call discovery: shifting focus from aesthetics to missed local phone calls and slow mobile page speeds.`,
-          supportingResearch: 'Cold calling experiment logs; 3 out of 8 connected prospects accepted free video audits.',
-          sourceUrls: [],
-          evidenceNotes: 'Focus on client lifetime value rather than hourly dev rates.',
-          estimatedProductionTime: 25,
-          priority: 'High',
-          status: 'Inbox',
-          isAiGenerated: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          time: 50,
+          priority: 'High' as const,
         },
         {
-          id: `idea_gen_${Date.now()}_3`,
-          title: `5 Things to Fix on Your Website Before Running Local SEO`,
-          pillar: (pillar as ContentPillar) || 'WEBSITE_DEV_AND_SEO',
-          topic: 'Technical SEO and landing page layout',
-          targetAudience: 'Local service businesses and web developers',
-          format: (format as ContentFormat) || 'CAROUSEL',
-          hook: `If your website has these 5 technical issues, no amount of Google Business Profile optimization will rank you.`,
-          mainAngle: `Slide-by-slide audit checklist: meta tags, NAP consistency, mobile tap targets, and WebP compression.`,
-          supportingResearch: 'Google Search Central Core Web Vitals documentation.',
-          sourceUrls: ['https://developers.google.com/search/docs/appearance/page-experience'],
-          evidenceNotes: 'Official Google guidelines confirm page experience signals.',
-          estimatedProductionTime: 45,
-          priority: 'Medium',
-          status: 'Inbox',
-          isAiGenerated: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          title: `How I Test & Deploy ${topicClean} Without Recurring Cloud Fees`,
+          hook: `You don't need a $200/month cloud setup for ${topicClean}. Here is the complete zero-cost local architecture.`,
+          mainAngle: `Hands-on walkthrough with configuration files, terminal commands, and local benchmark results.`,
+          supportingResearch: `Open-source repositories verified under MIT/Apache licenses.`,
+          format: (format as ContentFormat) || 'REELS',
+          time: 45,
+          priority: 'Medium' as const,
+        },
+        {
+          title: `5 Technical Lessons from Building Production ${topicClean}`,
+          hook: `Here are the 5 lessons I wish I knew before writing 10,000 lines of ${topicClean} code.`,
+          mainAngle: `Slide-by-slide checklist covering architecture pitfalls, testing rules, and performance wins.`,
+          supportingResearch: `Empirical developer logs and sprint review observations.`,
+          format: 'CAROUSEL' as ContentFormat,
+          time: 40,
+          priority: 'High' as const,
         },
       ];
+
+      generated = angleTemplates.slice(0, Math.max(1, count || 3)).map((tpl, idx) => ({
+        id: `idea_gen_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+        title: tpl.title,
+        pillar: (pillar as ContentPillar) || 'BUILDING_PROJECTS_AND_SYSTEMS',
+        topic: topicClean,
+        targetAudience: targetAudience || 'Developers, agency owners, and technical builders',
+        format: tpl.format,
+        hook: tpl.hook,
+        mainAngle: tpl.mainAngle,
+        supportingResearch: tpl.supportingResearch,
+        sourceUrls: ['https://github.com'],
+        evidenceNotes: 'Tested in production-grade environments with observable performance metrics.',
+        estimatedProductionTime: tpl.time,
+        priority: tpl.priority,
+        status: 'Inbox',
+        isAiGenerated: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
     }
 
     return NextResponse.json({ success: true, ideas: generated });

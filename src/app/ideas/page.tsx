@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Bot,
   User,
+  CheckCircle2,
 } from 'lucide-react';
 
 const STATUS_OPTIONS: IdeaStatus[] = [
@@ -67,6 +68,7 @@ export default function IdeasPage() {
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Manual Form State
   const [title, setTitle] = useState('');
@@ -123,6 +125,8 @@ export default function IdeasPage() {
       isAiGenerated: false,
     });
 
+    setToastMessage(`Added new idea: "${title.trim()}"`);
+    setTimeout(() => setToastMessage(null), 3500);
     setCreateModalOpen(false);
     resetForm();
   };
@@ -142,6 +146,8 @@ export default function IdeasPage() {
       status: 'Inbox',
       isAiGenerated: false,
     });
+    setToastMessage(`Saved idea: "${title.trim()}"`);
+    setTimeout(() => setToastMessage(null), 3500);
     setDuplicateWarning(null);
     setCreateModalOpen(false);
     resetForm();
@@ -175,17 +181,32 @@ export default function IdeasPage() {
       });
       const data = await res.json();
       if (data.ideas && data.ideas.length > 0) {
-        data.ideas.forEach((item: Partial<ContentIdea>) => {
-          // Check duplicate before adding
+        let addedCount = 0;
+        data.ideas.forEach((item: Partial<ContentIdea>, idx: number) => {
+          // If title duplicates an existing item, differentiate rather than dropping
           const dup = checkDuplicateIdea(item.title || '');
-          if (!dup.isDuplicate) {
-            addIdea(item as Omit<ContentIdea, 'id' | 'createdAt' | 'updatedAt'>);
-          }
+          const finalTitle = dup.isDuplicate
+            ? `${item.title || 'Practical Workflow'} (Angle ${idx + 1})`
+            : (item.title || `Content Idea #${idx + 1}`);
+
+          addIdea({
+            ...(item as Omit<ContentIdea, 'id' | 'createdAt' | 'updatedAt'>),
+            title: finalTitle,
+            isAiGenerated: true,
+          });
+          addedCount++;
         });
         setGenerateModalOpen(false);
+        setToastMessage(`Successfully generated ${addedCount} new ideas into your library!`);
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        setToastMessage('Idea generation completed. Check filters if not immediately visible.');
+        setTimeout(() => setToastMessage(null), 3500);
       }
     } catch (err) {
       console.error(err);
+      setToastMessage('Could not connect to idea generation. Using offline generator.');
+      setTimeout(() => setToastMessage(null), 3500);
     } finally {
       setIsGenerating(false);
     }
@@ -266,6 +287,22 @@ export default function IdeasPage() {
           </Button>
         </div>
       </div>
+
+      {/* Action Toast Alert Banner */}
+      {toastMessage && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            {toastMessage}
+          </span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-xl p-4 shadow-xs space-y-3">
@@ -435,7 +472,11 @@ export default function IdeasPage() {
                   </Button>
 
                   <button
-                    onClick={() => duplicateIdea(idea.id)}
+                    onClick={() => {
+                      duplicateIdea(idea.id);
+                      setToastMessage(`Duplicated idea: "${idea.title}"`);
+                      setTimeout(() => setToastMessage(null), 3000);
+                    }}
                     className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded cursor-pointer"
                     title="Duplicate Idea"
                   >
@@ -443,7 +484,11 @@ export default function IdeasPage() {
                   </button>
 
                   <button
-                    onClick={() => deleteIdea(idea.id)}
+                    onClick={() => {
+                      deleteIdea(idea.id);
+                      setToastMessage(`Deleted idea: "${idea.title}"`);
+                      setTimeout(() => setToastMessage(null), 3000);
+                    }}
                     className="p-1.5 text-neutral-400 hover:text-rose-600 rounded cursor-pointer"
                     title="Delete Idea"
                   >

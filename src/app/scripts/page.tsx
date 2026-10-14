@@ -25,6 +25,7 @@ import {
   HelpCircle,
   Type,
   AlignLeft,
+  X,
 } from 'lucide-react';
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.slice(0, 10) : '');
@@ -55,6 +56,8 @@ export default function ScriptStudioPage() {
   const [avoidWordsStr, setAvoidWordsStr] = useState(styleProfile.avoidWords.join(', '));
   const [signatureExpressionsStr, setSignatureExpressionsStr] = useState(styleProfile.signatureExpressions.join(', '));
   const [styleSaved, setStyleSaved] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isDraftsModalOpen, setIsDraftsModalOpen] = useState(false);
 
   const activeScript = scripts.find((s) => s.id === activeScriptId) || scripts[0];
 
@@ -147,31 +150,42 @@ export default function ScriptStudioPage() {
   };
 
   const handleCreateBlankScript = () => {
+    const untitledCount = scripts.filter((s) => s.title.toLowerCase().includes('untitled')).length;
+    const newTitle = `Untitled Video Script #${untitledCount + 1}`;
+    const initialText = `Stop doing X the hard way. Here is the realistic 3-step fix:\n\nStep 1: Standardize your core data models and requirements before touching any tools or external code. Unvalidated inputs cause over 80% of edge case failures.\n\nStep 2: Isolate the repetitive manual friction in your current pipeline and eliminate it with a self-contained, automated script.\n\nStep 3: Measure execution latency and double down strictly on what produces verifiable outcomes.\n\nNotice the key difference: you stop wasting time on brittle workarounds and take back full control of your technical systems.\n\nSave this video for your next build sprint, and comment below if you want the full implementation template!`;
+
     const newScript = addScript({
-      title: 'Untitled Video Script',
+      title: newTitle,
       pillar: 'BUILDING_PROJECTS_AND_SYSTEMS',
       hookOptions: ['Stop doing X the hard way.', 'If you want to master X, remember this.', 'The non-obvious rule for X.'],
       selectedHookIndex: 0,
-      spokenScriptShort: 'Hook statement.\n\nKey lesson.\n\nSave this post!',
-      spokenScriptLong: 'Hook statement.\n\nContext explanation.\n\nDemonstration.\n\nCall to action.',
-      currentSpokenScript: 'Stop doing X the hard way. Here is the realistic fix:\n\n1. Standardize input.\n2. Isolate friction.\n3. Measure outcomes.\n\nSave this Reel for your next build sprint!',
+      spokenScriptShort: `Stop doing X the hard way. Here is the realistic fix:\n\n1. Standardize your inputs.\n2. Isolate friction.\n3. Measure real execution speed.\n\nSave this Reel for your next sprint!`,
+      spokenScriptLong: initialText,
+      currentSpokenScript: initialText,
       shotList: [
-        { shotNumber: 1, visual: 'Direct to camera', audioSpoken: 'Opening Hook', durationSeconds: 5 },
+        { shotNumber: 1, visual: 'Direct to camera with energetic lean at desk', audioSpoken: 'Stop doing X the hard way.', onScreenText: 'STOP DOING THIS 🛑', durationSeconds: 8 },
+        { shotNumber: 2, visual: 'Screen capture of common friction point', audioSpoken: 'Unvalidated inputs cause 80% of edge case failures.', onScreenText: 'COMMON MISTAKE ⚠️', durationSeconds: 11 },
+        { shotNumber: 3, visual: 'Step-by-step terminal and architecture demonstration', audioSpoken: 'Step 1: Standardize inputs. Step 2: Automate friction. Step 3: Measure outcomes.', onScreenText: 'THE 3-STEP FIX 🛠️', durationSeconds: 19 },
+        { shotNumber: 4, visual: 'Direct to camera with save/comment CTA', audioSpoken: 'Save this video for your next build sprint, and comment below for the template!', onScreenText: 'SAVE THIS POST 📥', durationSeconds: 12 },
       ],
-      bRollSuggestions: ['Terminal demo', 'Screen recording'],
-      onScreenTextList: ['STOP DOING THIS 🛑'],
-      caption: 'A practical breakdown of content workflows. Save this for your next build! 🚀',
+      bRollSuggestions: ['Terminal demo', 'Screen recording', 'Code inspection'],
+      onScreenTextList: ['STOP DOING THIS 🛑', 'COMMON MISTAKE ⚠️', 'THE 3-STEP FIX 🛠️', 'SAVE THIS POST 📥'],
+      caption: 'A practical breakdown of content workflows. Save this for your next build! 🚀\n\n#buildinpublic #solodev #creatoros',
       callToAction: 'Save this video for your next build sprint!',
-      coverTitle: 'UNTITLED PLAYBOOK',
+      coverTitle: newTitle.toUpperCase(),
       structureType: 'Problem, Explanation, Solution',
-      tone: 'Direct, conversational',
-      estimatedDurationSeconds: 25,
+      tone: 'Direct, conversational, practical',
+      estimatedDurationSeconds: 50,
       status: 'draft',
     });
     setActiveScriptId(newScript.id);
+    setToastMessage(`Created new 50s+ draft: "${newTitle}"`);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const handleDeleteScript = (idToDelete: string) => {
+    const targetScript = scripts.find((s) => s.id === idToDelete);
+    const title = targetScript?.title || 'Script draft';
     const remaining = scripts.filter((s) => s.id !== idToDelete);
     deleteScript(idToDelete);
     if (remaining.length > 0) {
@@ -179,6 +193,22 @@ export default function ScriptStudioPage() {
     } else {
       setActiveScriptId('');
     }
+    setToastMessage(`Deleted draft: "${title}"`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleDeleteAllUntitled = () => {
+    const untitled = scripts.filter((s) => s.title.toLowerCase().includes('untitled'));
+    if (untitled.length === 0) return;
+    untitled.forEach((s) => deleteScript(s.id));
+    const remaining = scripts.filter((s) => !s.title.toLowerCase().includes('untitled'));
+    if (remaining.length > 0) {
+      setActiveScriptId(remaining[0].id);
+    } else {
+      setActiveScriptId('');
+    }
+    setToastMessage(`Deleted ${untitled.length} untitled draft(s)`);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   if (!activeScript) {
@@ -229,6 +259,17 @@ export default function ScriptStudioPage() {
               </option>
             ))}
           </select>
+
+          <Button
+            onClick={() => setIsDraftsModalOpen(true)}
+            variant="outline"
+            size="sm"
+            className="text-xs cursor-pointer"
+            title="Manage all drafts"
+          >
+            <Layers className="w-3.5 h-3.5 mr-1 text-purple-600" />
+            Manage Drafts ({scripts.length})
+          </Button>
 
           <Button onClick={handleCreateBlankScript} variant="outline" size="sm" className="text-xs cursor-pointer">
             <Plus className="w-3.5 h-3.5 mr-1" /> New Script
@@ -319,15 +360,38 @@ export default function ScriptStudioPage() {
         </div>
 
         {/* Word count & pacing telemetry */}
-        <div className="hidden sm:flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400 font-mono">
-          <span>Words: <strong>{words}</strong></span>
-          <span>•</span>
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3 text-neutral-400" />
-            <span>~{estimatedSeconds}s at 145 wpm</span>
-          </span>
+        <div className="flex items-center gap-2 text-xs font-mono flex-wrap">
+          <span className="text-neutral-500 dark:text-neutral-400">Words: <strong>{words}</strong></span>
+          <span className="text-neutral-300 dark:text-neutral-700">•</span>
+          {estimatedSeconds >= 45 ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] border border-emerald-500/30">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>~{estimatedSeconds}s (Target Met ≥ 45s)</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold text-[11px] border border-amber-500/30">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>~{estimatedSeconds}s (Short — Needs +{45 - estimatedSeconds}s / +{Math.max(1, Math.round((45 - estimatedSeconds) * (145 / 60)))} words)</span>
+            </span>
+          )}
         </div>
       </div>
+
+      {/* Action Toast Alert Banner */}
+      {toastMessage && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-semibold shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            {toastMessage}
+          </span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* TAB 1: SCRIPT EDITOR */}
       {activeTab === 'editor' && (
@@ -688,9 +752,17 @@ export default function ScriptStudioPage() {
       {/* TAB 4: TELEPROMPTER / REHEARSAL */}
       {activeTab === 'teleprompter' && (
         <div className="bg-neutral-900 text-white rounded-2xl p-8 sm:p-12 shadow-xl space-y-8 max-w-3xl mx-auto">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-4 text-xs font-mono">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-4 text-xs font-mono flex-wrap gap-2">
             <span className="text-neutral-400">TELEPROMPTER MODE</span>
-            <span className="text-emerald-400">TARGET: 145 WPM (~{estimatedSeconds}s)</span>
+            {estimatedSeconds >= 45 ? (
+              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> TARGET MET: ~{estimatedSeconds}s at 145 WPM ({words} words)
+              </span>
+            ) : (
+              <span className="text-amber-400 font-bold flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" /> TOO SHORT: ~{estimatedSeconds}s (Need at least 45s / +{Math.max(1, Math.round((45 - estimatedSeconds) * (145 / 60)))} words)
+              </span>
+            )}
           </div>
 
           <div className="space-y-6 text-xl sm:text-2xl font-medium leading-relaxed tracking-wide font-sans">
@@ -787,6 +859,116 @@ export default function ScriptStudioPage() {
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Drafts Manager Modal */}
+      {isDraftsModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-purple-600" />
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                  Manage Script Drafts ({scripts.length})
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsDraftsModalOpen(false)}
+                className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-neutral-500">
+              <span>All scripts and drafts currently in your workspace.</span>
+              {scripts.some((s) => s.title.toLowerCase().includes('untitled')) && (
+                <button
+                  onClick={handleDeleteAllUntitled}
+                  className="text-rose-600 dark:text-rose-400 hover:underline font-semibold cursor-pointer"
+                >
+                  Delete All Untitled Drafts
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-y-auto space-y-2 flex-1 pr-1">
+              {scripts.map((s) => {
+                const sWords = (s.currentSpokenScript || '').trim().split(/\s+/).filter(Boolean).length;
+                const sSecs = Math.round((sWords / 145) * 60);
+                const isTargetMet = sSecs >= 45;
+                const isActive = s.id === activeScript.id;
+
+                return (
+                  <div
+                    key={s.id}
+                    className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
+                      isActive
+                        ? 'border-purple-500 bg-purple-50/40 dark:bg-purple-950/20'
+                        : 'border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                          {s.title}
+                        </span>
+                        {isActive && (
+                          <span className="text-[10px] bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.2 rounded font-mono">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-neutral-500 mt-1">
+                        <span>{sWords} words</span>
+                        <span>•</span>
+                        {isTargetMet ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                            <CheckCircle2 className="w-3 h-3" /> ~{sSecs}s (Target Met ≥45s)
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                            <AlertCircle className="w-3 h-3" /> ~{sSecs}s (Short — Under 45s)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        onClick={() => {
+                          setActiveScriptId(s.id);
+                          setIsDraftsModalOpen(false);
+                        }}
+                        variant={isActive ? 'primary' : 'outline'}
+                        size="sm"
+                        className="text-xs h-7 px-2.5"
+                      >
+                        {isActive ? 'Editing' : 'Open'}
+                      </Button>
+                      <button
+                        onClick={() => handleDeleteScript(s.id)}
+                        className="p-1.5 text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer transition-colors"
+                        title="Delete Draft"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+              <Button onClick={handleCreateBlankScript} variant="outline" size="sm" className="text-xs">
+                <Plus className="w-3.5 h-3.5 mr-1" /> New 45s+ Script
+              </Button>
+              <Button onClick={() => setIsDraftsModalOpen(false)} variant="primary" size="sm" className="text-xs">
+                Done
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

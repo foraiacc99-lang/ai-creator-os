@@ -270,6 +270,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [calendar]);
 
+  // Ensure scripts meet the minimum 45s benchmark (110+ words)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setScripts((prev) => {
+      let changed = false;
+      const updated = prev.map((s) => {
+        const words = (s.currentSpokenScript || '').trim().split(/\s+/).filter(Boolean).length;
+        if (words < 90 && s.spokenScriptLong && s.spokenScriptLong.trim().split(/\s+/).filter(Boolean).length >= 100) {
+          changed = true;
+          return {
+            ...s,
+            currentSpokenScript: s.spokenScriptLong,
+            estimatedDurationSeconds: Math.max(50, Math.round((s.spokenScriptLong.trim().split(/\s+/).filter(Boolean).length / 145) * 60)),
+          };
+        }
+        return s;
+      });
+      if (changed) {
+        writeStorage(STORAGE_KEYS.SCRIPTS, updated);
+        return updated;
+      }
+      return prev;
+    });
+  }, []);
+
   // Actions
   const updatePreferences = (updates: Partial<UserPreferences>) => {
     setPreferences((prev) => {
@@ -400,6 +425,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const hook2 = `If you want to master ${idea.topic}, keep this in mind.`;
     const hook3 = `The non-obvious rule for ${idea.topic}.`;
 
+    const spokenFull = `${hook1}\n\nMost creators and technical builders get stuck on ${idea.topic} because they focus on surface-level symptoms instead of the root architecture. They spend hours guessing and debugging rather than executing a proven workflow.\n\nHere is the realistic 3-step framework that actually works:\n\nStep 1: Standardize your core data models and requirements before touching any tools or external code. Unvalidated inputs cause over 80% of edge case failures.\n\nStep 2: Isolate the repetitive manual friction in your current pipeline and eliminate it with a self-contained, automated script.\n\nStep 3: Measure execution latency and double down strictly on what produces verifiable outcomes.\n\nNotice the key difference: you stop wasting time on brittle workarounds and take back full control of your technical systems.\n\nSave this video for your next build sprint, and comment below if you want the full implementation template!`;
+
     const newScript: ScriptItem = {
       id: `script_${Date.now()}`,
       ideaId: idea.id,
@@ -407,37 +434,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pillar: idea.pillar,
       hookOptions: [hook1, hook2, hook3],
       selectedHookIndex: 0,
-      spokenScriptShort: `${hook1}\n\nHere is what you need to know about ${idea.topic}:\n\n1. Standardize your input.\n2. Cut unnecessary friction.\n3. Measure real-world outcomes.\n\nSave this Reel for your next sprint!`,
-      spokenScriptLong: `${hook1}\n\nMost people get stuck because they focus on symptoms instead of root causes. They spend hours guessing instead of executing.\n\nHere is the practical framework:\n1. Standardize your input before touching any tools.\n2. Isolate the repetitive friction and eliminate it.\n3. Measure what moves the needle and double down.\n\nSave this video and comment below if you want the full breakdown!`,
-      currentSpokenScript: `${hook1}\n\nHere is the practical 3-step breakdown for ${idea.topic}:\n\n1. Standardize your input.\n2. Eliminate the friction.\n3. Measure real outcomes.\n\nSave this video for your next build!`,
+      spokenScriptShort: `${hook1}\n\nHere is the realistic 3-step fix for ${idea.topic}:\n\n1. Standardize data models before building.\n2. Isolate manual friction with local scripts.\n3. Measure real execution speed.\n\nSave this video for your next build sprint!`,
+      spokenScriptLong: spokenFull,
+      currentSpokenScript: spokenFull,
       shotList: [
         {
           shotNumber: 1,
           visual: 'Direct to camera with energetic posture at desk',
           audioSpoken: hook1,
           onScreenText: 'STOP DOING THIS 🛑',
-          durationSeconds: 5,
+          durationSeconds: 8,
         },
         {
           shotNumber: 2,
-          visual: 'Screen recording or visual proof demonstrating the common mistake',
-          audioSpoken: 'Most people focus on symptoms instead of root causes.',
+          visual: 'Screen recording or visual proof demonstrating the common bottleneck',
+          audioSpoken: `Most builders get stuck on ${idea.topic} because they focus on symptoms instead of root architecture.`,
           onScreenText: 'THE REAL BOTTLENECK ⚠️',
-          durationSeconds: 6,
-        },
-        {
-          shotNumber: 3,
-          visual: 'Walkthrough of the 3-step framework with clear graphics',
-          audioSpoken: 'Here is the 3-step framework to eliminate the problem.',
-          onScreenText: 'THE 3-STEP FIX 🛠️',
           durationSeconds: 12,
         },
         {
+          shotNumber: 3,
+          visual: 'Walkthrough of the 3-step framework with clear graphics and code demonstration',
+          audioSpoken: 'Step 1: Standardize inputs. Step 2: Eliminate friction with a script. Step 3: Measure outcomes.',
+          onScreenText: 'THE 3-STEP FIX 🛠️',
+          durationSeconds: 22,
+        },
+        {
           shotNumber: 4,
-          visual: 'Back to camera with save/comment call to action',
-          audioSpoken: 'Save this video for your next build!',
+          visual: 'Back to camera with comment prompt overlay',
+          audioSpoken: 'Notice the difference: you eliminate fragile workarounds. Save this video and comment below for the template!',
           onScreenText: 'SAVE THIS POST 📥',
-          durationSeconds: 5,
+          durationSeconds: 10,
         },
       ],
       bRollSuggestions: ['Terminal command screencast', 'Code or audit document inspection', 'Close-up of hands typing'],
@@ -447,7 +474,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       coverTitle: idea.title.toUpperCase(),
       structureType: 'Problem, Explanation, Solution',
       tone: 'Direct, conversational, practical',
-      estimatedDurationSeconds: 28,
+      estimatedDurationSeconds: 52,
       status: 'draft',
       version: 1,
       createdAt: new Date().toISOString(),

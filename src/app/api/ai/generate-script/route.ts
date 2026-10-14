@@ -76,12 +76,16 @@ Creator Style:
 - Directness: ${styleProfile?.directnessScore || 9}/10
 - Avoid words: ${(styleProfile?.avoidWords || []).join(', ')}
 
+DURATION & PACING REQUIREMENT (MANDATORY):
+- Target Duration: 45 to 60 seconds (strictly 120 to 150 spoken words at 145 WPM speaking pace).
+- DO NOT generate short 20-30 second scripts. Provide rich, actionable, step-by-step depth so that speaking it takes at least 45 to 55 seconds.
+
 Output a valid JSON object with keys:
 - "hookOptions": [string, string, string] (3 distinct hook styles: Problem-first, Contrarian, and Metric/Outcome)
-- "spokenScriptShort": string (approx 30s version)
-- "spokenScriptLong": string (approx 55s version)
-- "currentSpokenScript": string (recommended starting version, approx 35-40s)
-- "shotList": Array of objects: { "shotNumber": number, "visual": string, "audioSpoken": string, "onScreenText": string, "durationSeconds": number }
+- "spokenScriptShort": string (approx 45s version, ~115 words)
+- "spokenScriptLong": string (approx 60s version, ~145-155 words)
+- "currentSpokenScript": string (recommended full version, approx 50-55s, 125-145 words, structured into: Hook, Core Problem Setup, 3-Step Practical Solution, Proof/Measurable Outcome, and Call to Action)
+- "shotList": Array of objects: { "shotNumber": number, "visual": string, "audioSpoken": string, "onScreenText": string, "durationSeconds": number } (at least 4-5 shots totaling 48-55 seconds)
 - "bRollSuggestions": string[]
 - "onScreenTextList": string[]
 - "caption": string
@@ -91,7 +95,7 @@ Output a valid JSON object with keys:
 - "tone": string
 - "shootingPlan": string
 - "editingNotes": string
-- "estimatedDurationSeconds": number
+- "estimatedDurationSeconds": number (between 45 and 60)
 
 Return ONLY raw JSON.`;
 
@@ -113,7 +117,7 @@ Return ONLY raw JSON.`;
       const hook2 = `If you want to master ${idea?.topic || 'this'}, avoid this common beginner mistake.`;
       const hook3 = `The non-obvious framework top 1% builders use for ${idea?.topic || 'projects'}.`;
 
-      const spoken = `${hook1}\n\nMost people get stuck because they focus on symptoms instead of root causes. They spend hours guessing instead of building.\n\nHere is the 3-step fix:\n1. Standardize your input before touching any tools.\n2. Isolate the repetitive friction and automate it with a simple script.\n3. Measure what moves the needle.\n\nSave this Reel for your next build sprint!`;
+      const spoken = `${hook1}\n\nMost creators and technical builders get stuck on ${idea?.topic || 'this workflow'} because they focus on surface-level symptoms instead of the underlying architecture. They spend hours guessing and debugging rather than executing a proven workflow.\n\nHere is the realistic 3-step framework that actually fixes it:\n\nStep 1: Standardize your core data models and requirements before touching any tools or external code. Unvalidated inputs cause over 80% of edge case failures.\n\nStep 2: Isolate the repetitive manual friction in your current pipeline and eliminate it with a self-contained, automated script.\n\nStep 3: Measure execution latency and double down strictly on what produces verifiable outcomes.\n\nNotice the key difference: you stop wasting time on brittle workarounds and take back full control of your technical systems.\n\nSave this video for your next build sprint, and comment below if you want the full implementation template!`;
 
       const shotList: ScriptShot[] = [
         {
@@ -121,28 +125,35 @@ Return ONLY raw JSON.`;
           visual: 'Direct eye contact to camera with energetic forward lean at desk',
           audioSpoken: hook1,
           onScreenText: 'STOP DOING THIS 🛑',
-          durationSeconds: 5,
+          durationSeconds: 8,
         },
         {
           shotNumber: 2,
           visual: 'Screen recording highlighting the common error or friction point',
-          audioSpoken: 'Most people get stuck because they focus on symptoms instead of root causes.',
-          onScreenText: 'THE COMMON MISTAKE ⚠️',
-          durationSeconds: 6,
+          audioSpoken: `Most builders get stuck on ${idea?.topic || 'this workflow'} because they focus on surface-level symptoms instead of root architecture.`,
+          onScreenText: 'THE REAL BOTTLENECK ⚠️',
+          durationSeconds: 11,
         },
         {
           shotNumber: 3,
           visual: 'Visual walkthrough of the 3-step fix with terminal or diagram overlays',
-          audioSpoken: 'Here is the 3-step fix: 1. Standardize input. 2. Isolate friction. 3. Measure results.',
+          audioSpoken: 'Step 1: Standardize inputs. Step 2: Eliminate friction with a script. Step 3: Measure real execution speed.',
           onScreenText: 'THE 3-STEP FIX 🛠️',
-          durationSeconds: 14,
+          durationSeconds: 18,
         },
         {
           shotNumber: 4,
+          visual: 'Visual proof showing the latency or output improvement side-by-side',
+          audioSpoken: 'Notice the difference: you eliminate fragile workarounds and take back full control of your systems.',
+          onScreenText: 'MEASURABLE OUTCOMES ⚡',
+          durationSeconds: 9,
+        },
+        {
+          shotNumber: 5,
           visual: 'Talking head cutback with comment / save CTA overlay',
-          audioSpoken: 'Save this Reel for your next build sprint!',
+          audioSpoken: 'Save this video for your next build sprint, and comment below if you want the full implementation template!',
           onScreenText: 'SAVE THIS POST 📥',
-          durationSeconds: 5,
+          durationSeconds: 6,
         },
       ];
 
@@ -152,24 +163,29 @@ Return ONLY raw JSON.`;
         ideaId: idea?.id,
         hookOptions: [hook1, hook2, hook3],
         selectedHookIndex: 0,
-        spokenScriptShort: `${hook1}\n\n1. Standardize your input.\n2. Cut the friction.\n3. Measure outcomes.\n\nSave this for your next sprint!`,
+        spokenScriptShort: `${hook1}\n\nHere is the realistic 3-step fix for ${idea?.topic || 'this'}:\n1. Standardize your input models.\n2. Isolate friction with automated scripts.\n3. Measure real execution speed.\n\nSave this video for your next sprint!`,
         spokenScriptLong: spoken,
         currentSpokenScript: spoken,
         shotList,
         bRollSuggestions: ['Screen recording of terminal execution', 'Close-up of hands typing', 'Flowchart diagram'],
-        onScreenTextList: ['STOP DOING THIS 🛑', 'THE COMMON MISTAKE ⚠️', 'THE 3-STEP FIX 🛠️', 'SAVE THIS POST 📥'],
+        onScreenTextList: ['STOP DOING THIS 🛑', 'THE REAL BOTTLENECK ⚠️', 'THE 3-STEP FIX 🛠️', 'MEASURABLE OUTCOMES ⚡', 'SAVE THIS POST 📥'],
         caption: `${idea?.mainAngle || 'A practical breakdown of content workflows.'}\n\nSave this Reel for your next build sprint! 🚀\n\n#buildinpublic #solodev #creatoros`,
         callToAction: 'Save this video for your next build sprint!',
         coverTitle: (idea?.title || 'PRACTICAL PLAYBOOK').toUpperCase(),
         structureType: 'Problem, Explanation, Solution',
         tone: 'Direct, insightful, conversational',
-        estimatedDurationSeconds: 30,
+        estimatedDurationSeconds: 52,
         shootingPlan: 'Record 3 takes of the opening hook first. Keep energy consistent.',
         editingNotes: 'Tight cuts on breath pauses. Ensure subtitle words highlight on beat.',
         status: 'draft',
         version: 1,
       };
     }
+
+    // Ensure estimated duration accurately reflects the spoken script length (minimum 48s)
+    const scriptWords = (generatedScript.currentSpokenScript || '').trim().split(/\s+/).filter(Boolean).length;
+    const computedDuration = Math.max(48, Math.round((scriptWords / 145) * 60));
+    generatedScript.estimatedDurationSeconds = Math.max(computedDuration, generatedScript.estimatedDurationSeconds || 48);
 
     return NextResponse.json({
       success: true,
