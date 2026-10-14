@@ -117,7 +117,7 @@ export default function StrategistPage() {
       </div>
 
       {/* Strategic Inputs Summary Bar */}
-      <div className="p-4 bg-neutral-100/70 dark:bg-neutral-850 rounded-xl border border-neutral-200/80 dark:border-neutral-800 text-xs flex flex-wrap items-center justify-between gap-3 text-neutral-600 dark:text-neutral-400">
+      <div className="p-4 bg-neutral-100/70 dark:bg-neutral-800 rounded-xl border border-neutral-200/80 dark:border-neutral-800 text-xs flex flex-wrap items-center justify-between gap-3 text-neutral-600 dark:text-neutral-400">
         <div className="flex items-center gap-4 flex-wrap">
           <span>Active Pillars: <strong>6 Configured</strong></span>
           <span>•</span>
@@ -179,7 +179,7 @@ export default function StrategistPage() {
               {/* Card Header (Summary) */}
               <div
                 onClick={() => setExpandedRecId(isExpanded ? null : rec.id)}
-                className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-neutral-50/50 dark:hover:bg-neutral-850/50 transition-colors"
+                className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50 transition-colors"
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">

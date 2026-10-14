@@ -184,7 +184,7 @@ export default function ReportsPage() {
               placeholder="Search reports by observations, lessons, or category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             />
           </div>
 
@@ -246,7 +246,7 @@ export default function ReportsPage() {
               </div>
 
               {r.lessonsLearned && (
-                <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-850 border border-neutral-200/70 dark:border-neutral-800 space-y-1">
+                <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/70 dark:border-neutral-800 space-y-1">
                   <span className="font-bold text-neutral-800 dark:text-neutral-200 block text-[11px]">
                     Lessons Learned:
                   </span>
@@ -348,7 +348,7 @@ export default function ReportsPage() {
                   placeholder="e.g. Weekly Review: 25 Cold Calls to Local Dentists"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -362,7 +362,7 @@ export default function ReportsPage() {
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
 
@@ -373,7 +373,7 @@ export default function ReportsPage() {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as ReportCategory)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -394,7 +394,7 @@ export default function ReportsPage() {
                   placeholder="What specifically happened? (e.g. 25 calls, 14 voicemails, 8 answered, 3 video audits accepted)"
                   value={observations}
                   onChange={(e) => setObservations(e.target.value)}
-                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -407,7 +407,7 @@ export default function ReportsPage() {
                   placeholder="What is the key takeaway? What will you do differently next time?"
                   value={lessonsLearned}
                   onChange={(e) => setLessonsLearned(e.target.value)}
-                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -421,7 +421,7 @@ export default function ReportsPage() {
                     placeholder="e.g. 3 video reviews requested, $350 booked"
                     value={metrics}
                     onChange={(e) => setMetrics(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
 
@@ -434,7 +434,7 @@ export default function ReportsPage() {
                     placeholder="sales, dentists, cold-calling"
                     value={tagsStr}
                     onChange={(e) => setTagsStr(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
               </div>

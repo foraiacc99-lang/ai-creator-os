@@ -12,7 +12,7 @@ export const Badge: React.FC<BadgeProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    default: 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900',
+    default: 'bg-neutral-900 text-white dark:bg-neutral-800 dark:text-neutral-100 dark:border dark:border-neutral-700',
     secondary: 'bg-neutral-100 text-neutral-800 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-700',
     outline: 'border border-neutral-300 text-neutral-700 bg-transparent dark:border-neutral-700 dark:text-neutral-300',
     success: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',

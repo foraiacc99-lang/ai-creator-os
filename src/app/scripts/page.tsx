@@ -372,7 +372,7 @@ export default function ScriptStudioPage() {
                   rows={10}
                   value={activeScript.currentSpokenScript}
                   onChange={(e) => updateScript(activeScript.id, { currentSpokenScript: e.target.value })}
-                  className="w-full p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 text-xs font-sans leading-relaxed focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-y"
+                  className="w-full p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xs font-sans leading-relaxed focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-y"
                 />
               </div>
 
@@ -439,7 +439,7 @@ export default function ScriptStudioPage() {
                   type="text"
                   value={activeScript.callToAction}
                   onChange={(e) => updateScript(activeScript.id, { callToAction: e.target.value })}
-                  className="w-full px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -449,7 +449,7 @@ export default function ScriptStudioPage() {
                   rows={5}
                   value={activeScript.caption}
                   onChange={(e) => updateScript(activeScript.id, { caption: e.target.value })}
-                  className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
             </div>
@@ -464,7 +464,7 @@ export default function ScriptStudioPage() {
                   value={activeScript.shootingPlan || ''}
                   onChange={(e) => updateScript(activeScript.id, { shootingPlan: e.target.value })}
                   placeholder="e.g. Desk setup, 24fps 1080x1920 vertical, record 3 hook takes."
-                  className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -475,7 +475,7 @@ export default function ScriptStudioPage() {
                   value={activeScript.editingNotes || ''}
                   onChange={(e) => updateScript(activeScript.id, { editingNotes: e.target.value })}
                   placeholder="e.g. Fast jump cuts on breath pauses, punch in on key numbers."
-                  className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
             </div>
@@ -501,7 +501,7 @@ export default function ScriptStudioPage() {
             {activeScript.shotList.map((shot, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850 space-y-3"
+                className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800 space-y-3"
               >
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="px-2 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
@@ -707,7 +707,7 @@ export default function ScriptStudioPage() {
                 type="text"
                 value={speakingRhythm}
                 onChange={(e) => setSpeakingRhythm(e.target.value)}
-                className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               />
             </div>
 
@@ -718,7 +718,7 @@ export default function ScriptStudioPage() {
               <select
                 value={sentenceLength}
                 onChange={(e) => setSentenceLength(e.target.value as 'punchy' | 'moderate' | 'conversational')}
-                className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               >
                 <option value="punchy">Punchy (Short, staccato statements)</option>
                 <option value="moderate">Moderate (Balanced sentences with natural rhythm)</option>
@@ -734,7 +734,7 @@ export default function ScriptStudioPage() {
                 rows={2}
                 value={avoidWordsStr}
                 onChange={(e) => setAvoidWordsStr(e.target.value)}
-                className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               />
             </div>
 
@@ -746,7 +746,7 @@ export default function ScriptStudioPage() {
                 rows={2}
                 value={signatureExpressionsStr}
                 onChange={(e) => setSignatureExpressionsStr(e.target.value)}
-                className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
               />
             </div>
 

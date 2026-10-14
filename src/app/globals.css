@@ -2,6 +2,11 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-neutral-850: #18181f;
+  --color-neutral-925: #101015;
+}
+
 :root {
   --background: #fbfbfc;
   --foreground: #09090b;
@@ -14,14 +19,15 @@
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #121215;
-  --card-foreground: #fafafa;
-  --muted: #1c1c21;
+  --background: #09090d;
+  --foreground: #f4f4f6;
+  --card: #121217;
+  --card-foreground: #f4f4f6;
+  --muted: #191922;
   --muted-foreground: #a1a1aa;
-  --border: #27272a;
-  --ring: #d4d4d8;
+  --border: #26262e;
+  --ring: #818cf8;
+  color-scheme: dark;
 }
 
 body {
@@ -31,7 +37,34 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Subtle scrollbars */
+/* Ensure inputs, select boxes, and textareas are crystal-clear and readable in dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  color-scheme: dark;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #71717a;
+}
+
+.dark select option {
+  background-color: #141419;
+  color: #f4f4f6;
+}
+
+/* Safety utility overrides for nested card and badge surfaces */
+.dark .bg-neutral-850,
+.dark [class*="dark:bg-neutral-850"] {
+  background-color: #18181f !important;
+}
+
+.dark [class*="dark:hover:bg-neutral-850"]:hover {
+  background-color: #22222b !important;
+}
+
+/* Subtle luxury scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -44,8 +77,11 @@ body {
   border-radius: 9999px;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(200, 200, 200, 0.2);
+  background: rgba(255, 255, 255, 0.12);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 140, 140, 0.4);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }

@@ -267,7 +267,7 @@ export default function IdeasPage() {
               placeholder="Search ideas by title, topic, or hook..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50/50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50/50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             />
           </div>
 
@@ -375,9 +375,9 @@ export default function IdeasPage() {
                 </div>
 
                 {/* Opening Hook preview */}
-                <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-850 border border-neutral-200/70 dark:border-neutral-800 text-xs text-neutral-700 dark:text-neutral-300">
-                  <span className="font-semibold text-neutral-400 block text-[10px] uppercase mb-0.5">Opening Hook:</span>
-                  <p className="line-clamp-2">&ldquo;{idea.hook}&rdquo;</p>
+                <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/70 border border-neutral-200/70 dark:border-neutral-700/80 text-xs text-neutral-700 dark:text-neutral-200">
+                  <span className="font-semibold text-neutral-400 dark:text-neutral-400 block text-[10px] uppercase mb-0.5">Opening Hook:</span>
+                  <p className="line-clamp-2 text-neutral-800 dark:text-neutral-200">&ldquo;{idea.hook}&rdquo;</p>
                 </div>
 
                 {/* Supporting research preview if present */}
@@ -513,7 +513,7 @@ export default function IdeasPage() {
                   placeholder="e.g. 5 Free GitHub Repos for Local AI Developers"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -525,7 +525,7 @@ export default function IdeasPage() {
                   <select
                     value={pillar}
                     onChange={(e) => setPillar(e.target.value as ContentPillar)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                   >
                     {CONTENT_PILLARS.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -542,7 +542,7 @@ export default function IdeasPage() {
                   <select
                     value={format}
                     onChange={(e) => setFormat(e.target.value as ContentFormat)}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                   >
                     <option value="REELS">Reels / Shorts (Vertical)</option>
                     <option value="CAROUSEL">Carousel (Slide Deck)</option>
@@ -560,7 +560,7 @@ export default function IdeasPage() {
                   placeholder="e.g. Stop paying $20/month for AI wrappers. Here is the local alternative."
                   value={hook}
                   onChange={(e) => setHook(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -573,7 +573,7 @@ export default function IdeasPage() {
                   placeholder="Explain why this angle is unique and what terminal/visual proof will appear on screen."
                   value={mainAngle}
                   onChange={(e) => setMainAngle(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -585,7 +585,7 @@ export default function IdeasPage() {
                   <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as 'Low' | 'Medium' | 'High')}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   >
                     <option value="High">High Priority</option>
                     <option value="Medium">Medium Priority</option>
@@ -603,7 +603,7 @@ export default function IdeasPage() {
                     max={240}
                     value={productionMinutes}
                     onChange={(e) => setProductionMinutes(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   />
                 </div>
               </div>
@@ -656,7 +656,7 @@ export default function IdeasPage() {
                   placeholder="e.g. Free local LLM tools for voice agents"
                   value={genTopic}
                   onChange={(e) => setGenTopic(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -667,7 +667,7 @@ export default function IdeasPage() {
                 <select
                   value={genPillar}
                   onChange={(e) => setGenPillar(e.target.value as ContentPillar)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                 >
                   {CONTENT_PILLARS.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -684,7 +684,7 @@ export default function IdeasPage() {
                 <select
                   value={genFormat}
                   onChange={(e) => setGenFormat(e.target.value as ContentFormat)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                 >
                   <option value="REELS">Reels / Shorts (Vertical)</option>
                   <option value="CAROUSEL">Carousel (Slide Deck)</option>

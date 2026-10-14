@@ -209,7 +209,7 @@ export default function AIChatPage() {
           <button
             key={idx}
             onClick={() => handleSendMessage(prompt)}
-            className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-850 whitespace-nowrap cursor-pointer transition-colors text-[11px]"
+            className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 whitespace-nowrap cursor-pointer transition-colors text-[11px]"
           >
             {prompt}
           </button>
@@ -226,7 +226,7 @@ export default function AIChatPage() {
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
                   isUser
-                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+                    ? 'bg-neutral-900 text-white dark:bg-neutral-800 dark:text-neutral-100 dark:border dark:border-neutral-700'
                     : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
                 }`}
               >
@@ -237,8 +237,8 @@ export default function AIChatPage() {
                 <div
                   className={`p-4 rounded-2xl text-xs leading-relaxed ${
                     isUser
-                      ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950 font-medium'
-                      : 'bg-neutral-50 dark:bg-neutral-850 border border-neutral-200/80 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200'
+                      ? 'bg-neutral-900 text-white dark:bg-neutral-800 dark:text-neutral-100 font-medium dark:border dark:border-neutral-700'
+                      : 'bg-neutral-50 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-800 dark:text-neutral-100'
                   }`}
                 >
                   <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -283,7 +283,7 @@ export default function AIChatPage() {
             <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 flex items-center justify-center">
               <Bot className="w-4 h-4 animate-spin" />
             </div>
-            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-850 border border-neutral-200 dark:border-neutral-800 text-neutral-400 animate-pulse">
+            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-400 animate-pulse">
               Consulting your saved research and content strategy...
             </div>
           </div>

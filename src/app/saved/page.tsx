@@ -98,7 +98,7 @@ export default function SavedContentPage() {
               placeholder="Search entire knowledge base across all records..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+              className="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             />
           </div>
 
@@ -148,7 +148,7 @@ export default function SavedContentPage() {
               {filteredIdeas.map((idea) => (
                 <div
                   key={idea.id}
-                  className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850 space-y-2 flex flex-col justify-between"
+                  className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800 space-y-2 flex flex-col justify-between"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -188,7 +188,7 @@ export default function SavedContentPage() {
               {filteredResearch.map((res) => (
                 <div
                   key={res.id}
-                  className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850 space-y-2"
+                  className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800 space-y-2"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-bold text-neutral-900 dark:text-neutral-100">{res.title}</h4>
@@ -233,7 +233,7 @@ export default function SavedContentPage() {
               {filteredReports.map((rp) => (
                 <div
                   key={rp.id}
-                  className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-850 space-y-2"
+                  className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800 space-y-2"
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-neutral-900 dark:text-neutral-100">{rp.title}</span>

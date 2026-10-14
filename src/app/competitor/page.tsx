@@ -236,7 +236,7 @@ export default function CompetitorResearchPage() {
                 </p>
               </div>
 
-              <div className="space-y-2 bg-neutral-50 dark:bg-neutral-850 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
+              <div className="space-y-2 bg-neutral-50 dark:bg-neutral-800 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800">
                 <span className="font-semibold text-neutral-500 block">Manual Observations:</span>
                 <ul className="list-disc list-inside space-y-1 text-neutral-700 dark:text-neutral-300">
                   {activeCompetitor.manualObservations.map((obs, i) => (
@@ -296,7 +296,7 @@ export default function CompetitorResearchPage() {
                   </div>
 
                   {/* Hook breakdown */}
-                  <div className="p-3 bg-neutral-50 dark:bg-neutral-850 rounded-xl border border-neutral-200/70 dark:border-neutral-800 space-y-1">
+                  <div className="p-3 bg-neutral-50 dark:bg-neutral-800 rounded-xl border border-neutral-200/70 dark:border-neutral-800 space-y-1">
                     <span className="font-semibold text-neutral-400 block text-[10px] uppercase">Opening Hook Analyzed:</span>
                     <p className="font-semibold text-neutral-800 dark:text-neutral-200">&ldquo;{ana.hook}&rdquo;</p>
                   </div>
@@ -377,7 +377,7 @@ export default function CompetitorResearchPage() {
                   placeholder="e.g. Alex Rivera (@alexrivera.dev)"
                   value={creatorName}
                   onChange={(e) => setCreatorName(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -390,7 +390,7 @@ export default function CompetitorResearchPage() {
                   placeholder="https://instagram.com/alexrivera.dev"
                   value={profileUrl}
                   onChange={(e) => setProfileUrl(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -402,7 +402,7 @@ export default function CompetitorResearchPage() {
                   type="text"
                   value={pillarsStr}
                   onChange={(e) => setPillarsStr(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
@@ -415,7 +415,7 @@ export default function CompetitorResearchPage() {
                   placeholder="e.g. Screen recordings with clear typography subtitles. Direct talking head."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                 />
               </div>
 
