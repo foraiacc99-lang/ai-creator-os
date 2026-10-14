@@ -34,6 +34,7 @@ export default function StrategistPage() {
     convertRecommendationToIdea,
     createScriptFromIdea,
     addCalendarEntry,
+    calendar,
     preferences,
     aiConfig,
     ideas,
@@ -62,17 +63,26 @@ export default function StrategistPage() {
   };
 
   const handleAddToCalendar = (rec: AIRecommendation) => {
-    const today = new Date();
-    today.setDate(today.getDate() + 2);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const hasToday = calendar.some((c) => c.plannedDate === todayStr);
+    const dateToSchedule = hasToday
+      ? (() => {
+          const d = new Date();
+          d.setDate(d.getDate() + 2);
+          return d.toISOString().split('T')[0];
+        })()
+      : todayStr;
+
     addCalendarEntry({
       title: rec.topic,
-      plannedDate: today.toISOString().split('T')[0],
+      plannedDate: dateToSchedule,
       plannedTime: '17:00',
       format: rec.recommendedFormat,
       pillar: rec.pillar,
       stage: 'Script',
       status: 'Inbox',
       notes: `Primary Hook: "${rec.primaryHook}"\nCTA: ${rec.recommendedCTA}`,
+      isSyncedToGoogle: false,
     });
     updateRecommendationStatus(rec.id, 'approved');
     router.push('/calendar');

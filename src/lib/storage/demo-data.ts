@@ -685,11 +685,18 @@ export const INITIAL_STORIES: StorySequence[] = [
   },
 ];
 
+// Helper to format ISO date string relative to today
+const getRelativeDateStr = (daysOffset: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  return d.toISOString().split('T')[0];
+};
+
 export const INITIAL_CALENDAR: CalendarEntry[] = [
   {
     id: 'cal_01',
     title: 'Handling Price Objections on Website Sales Calls',
-    plannedDate: '2026-10-15',
+    plannedDate: getRelativeDateStr(0), // Today
     plannedTime: '17:00',
     format: 'REELS',
     pillar: 'SALES_PSYCHOLOGY_AND_CLIENT_ACQUISITION',
@@ -703,7 +710,7 @@ export const INITIAL_CALENDAR: CalendarEntry[] = [
   {
     id: 'cal_02',
     title: '5 Mobile Design Mistakes Costing Local Businesses Clients',
-    plannedDate: '2026-10-17',
+    plannedDate: getRelativeDateStr(2),
     plannedTime: '18:30',
     format: 'CAROUSEL',
     pillar: 'WEBSITE_DEV_AND_SEO',
@@ -716,7 +723,7 @@ export const INITIAL_CALENDAR: CalendarEntry[] = [
   {
     id: 'cal_03',
     title: '5 Free GitHub Repos for AI Developers',
-    plannedDate: '2026-10-20',
+    plannedDate: getRelativeDateStr(4),
     plannedTime: '16:00',
     format: 'REELS',
     pillar: 'FREE_GITHUB_AND_DEV_TOOLS',

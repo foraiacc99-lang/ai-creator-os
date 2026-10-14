@@ -51,6 +51,7 @@ export default function IdeasPage() {
     duplicateIdea,
     createScriptFromIdea,
     addCalendarEntry,
+    calendar,
     checkDuplicateIdea,
     preferences,
     aiConfig,
@@ -196,11 +197,19 @@ export default function IdeasPage() {
   };
 
   const handleScheduleIdea = (idea: ContentIdea) => {
-    const today = new Date();
-    today.setDate(today.getDate() + 1);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const hasToday = calendar.some((c) => c.plannedDate === todayStr);
+    const dateToSchedule = hasToday
+      ? (() => {
+          const d = new Date();
+          d.setDate(d.getDate() + 1);
+          return d.toISOString().split('T')[0];
+        })()
+      : todayStr;
+
     addCalendarEntry({
       title: idea.title,
-      plannedDate: today.toISOString().split('T')[0],
+      plannedDate: dateToSchedule,
       plannedTime: '17:00',
       format: idea.format,
       pillar: idea.pillar,
@@ -208,6 +217,7 @@ export default function IdeasPage() {
       status: idea.status,
       ideaId: idea.id,
       notes: `Hook: "${idea.hook}"`,
+      isSyncedToGoogle: false,
     });
     updateIdea(idea.id, { status: 'Ready to Script' });
     router.push('/calendar');

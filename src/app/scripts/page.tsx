@@ -171,6 +171,16 @@ export default function ScriptStudioPage() {
     setActiveScriptId(newScript.id);
   };
 
+  const handleDeleteScript = (idToDelete: string) => {
+    const remaining = scripts.filter((s) => s.id !== idToDelete);
+    deleteScript(idToDelete);
+    if (remaining.length > 0) {
+      setActiveScriptId(remaining[0].id);
+    } else {
+      setActiveScriptId('');
+    }
+  };
+
   if (!activeScript) {
     return (
       <div className="p-12 text-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl space-y-4">
@@ -220,8 +230,19 @@ export default function ScriptStudioPage() {
             ))}
           </select>
 
-          <Button onClick={handleCreateBlankScript} variant="outline" size="sm" className="text-xs">
+          <Button onClick={handleCreateBlankScript} variant="outline" size="sm" className="text-xs cursor-pointer">
             <Plus className="w-3.5 h-3.5 mr-1" /> New Script
+          </Button>
+
+          <Button
+            onClick={() => handleDeleteScript(activeScript.id)}
+            variant="outline"
+            size="sm"
+            className="text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 cursor-pointer"
+            title="Delete this script draft"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
+            Delete Draft
           </Button>
 
           <Button
@@ -231,7 +252,7 @@ export default function ScriptStudioPage() {
             }}
             variant={activeScript.status === 'ready_for_filming' ? 'primary' : 'outline'}
             size="sm"
-            className="text-xs"
+            className="text-xs cursor-pointer"
           >
             <Video className="w-3.5 h-3.5 mr-1" />
             {activeScript.status === 'ready_for_filming' ? 'Marked: Ready to Shoot' : 'Mark Ready to Shoot'}
@@ -314,18 +335,28 @@ export default function ScriptStudioPage() {
           {/* Main Spoken Script (2 cols) */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-4">
-              {/* Title input */}
-              <div>
-                <input
-                  type="text"
-                  value={activeScript.title}
-                  onChange={(e) => updateScript(activeScript.id, { title: e.target.value })}
-                  className="w-full text-base font-bold text-neutral-900 dark:text-neutral-100 border-none bg-transparent focus:outline-none"
-                  placeholder="Script Title"
-                />
-                <span className="text-[11px] text-neutral-400">
-                  Version {activeScript.version} • Last updated {formatDate(activeScript.updatedAt)}
-                </span>
+              {/* Title input & delete action */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={activeScript.title}
+                    onChange={(e) => updateScript(activeScript.id, { title: e.target.value })}
+                    className="w-full text-base font-bold text-neutral-900 dark:text-neutral-100 border-none bg-transparent focus:outline-none"
+                    placeholder="Script Title"
+                  />
+                  <div className="text-[11px] text-neutral-400">
+                    Version {activeScript.version} • Last updated {formatDate(activeScript.updatedAt)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteScript(activeScript.id)}
+                  className="p-2 text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer transition-colors"
+                  title="Delete this script draft"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-500" />
+                </button>
               </div>
 
               {/* Hook Options Carousel */}

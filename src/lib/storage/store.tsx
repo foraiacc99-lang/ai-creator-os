@@ -101,7 +101,7 @@ interface AppContextType {
   addCalendarEntry: (entry: Omit<CalendarEntry, 'id'>) => CalendarEntry;
   updateCalendarEntry: (id: string, updates: Partial<CalendarEntry>) => void;
   deleteCalendarEntry: (id: string) => void;
-  autoPlanRealisticSchedule: () => void;
+  autoPlanRealisticSchedule: () => { count: number; message: string };
   syncCalendarToGoogle: (entryId: string) => Promise<{ success: boolean; message: string }>;
 
   // Reports & Notes
@@ -253,6 +253,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       else root.classList.remove('dark');
     }
   }, [theme]);
+
+  // Ensure calendar has a task scheduled for today if existing entries have drifted
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const hasToday = calendar.some((c) => c.plannedDate === todayStr);
+    if (!hasToday && calendar.length > 0) {
+      setCalendar((prev) => {
+        if (prev.length === 0 || prev.some((c) => c.plannedDate === todayStr)) return prev;
+        const updated = [...prev];
+        updated[0] = { ...updated[0], plannedDate: todayStr };
+        writeStorage(STORAGE_KEYS.CALENDAR, updated);
+        return updated;
+      });
+    }
+  }, [calendar]);
 
   // Actions
   const updatePreferences = (updates: Partial<UserPreferences>) => {
@@ -626,37 +642,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const autoPlanRealisticSchedule = () => {
-    // Generate realistic slots for ideas marked Ready to Script or Ready to Shoot
+  const autoPlanRealisticSchedule = (): { count: number; message: string } => {
+    const baseDate = new Date();
+    const todayStr = baseDate.toISOString().split('T')[0];
+    const hasTodayTask = calendar.some((c) => c.plannedDate === todayStr);
+
+    // Candidates: first look for ideas not currently mapped on calendar
     const unassignedIdeas = ideas.filter(
-      (i) =>
-        (i.status === 'Ready to Script' || i.status === 'Ready to Shoot' || i.status === 'Inbox') &&
-        !calendar.some((c) => c.ideaId === i.id)
+      (i) => !calendar.some((c) => c.ideaId === i.id)
     );
 
-    const candidates = unassignedIdeas.slice(0, 3);
     const newEntries: CalendarEntry[] = [];
-    const baseDate = new Date();
 
-    candidates.forEach((idea, idx) => {
-      const date = new Date(baseDate);
-      date.setDate(baseDate.getDate() + (idx + 1) * 2);
-      const plannedDateStr = date.toISOString().split('T')[0];
+    if (unassignedIdeas.length > 0) {
+      unassignedIdeas.slice(0, 3).forEach((idea, idx) => {
+        const date = new Date(baseDate);
+        // If today has no task, slot 0 is today! Otherwise +1, +3, +5 days
+        const offset = (!hasTodayTask && idx === 0) ? 0 : (hasTodayTask ? (idx + 1) * 2 : idx * 2);
+        date.setDate(baseDate.getDate() + offset);
+        const plannedDateStr = date.toISOString().split('T')[0];
 
-      newEntries.push({
-        id: `cal_auto_${Date.now()}_${idx}`,
-        title: idea.title,
-        plannedDate: plannedDateStr,
-        plannedTime: '17:00',
-        format: idea.format,
-        pillar: idea.pillar,
-        stage: idea.status === 'Ready to Shoot' ? 'Shooting' : 'Script',
-        status: idea.status,
-        ideaId: idea.id,
-        notes: `AI Scheduled slot based on ${preferences.availableFilmingHoursPerWeek}h weekly filming bandwidth.`,
-        isSyncedToGoogle: false,
+        newEntries.push({
+          id: `cal_auto_${Date.now()}_${idx}`,
+          title: idea.title,
+          plannedDate: plannedDateStr,
+          plannedTime: '17:00',
+          format: idea.format,
+          pillar: idea.pillar,
+          stage: idea.status === 'Ready to Shoot' ? 'Shooting' : 'Script',
+          status: idea.status,
+          ideaId: idea.id,
+          notes: `AI Scheduled slot based on ${preferences.availableFilmingHoursPerWeek}h weekly filming capacity.`,
+          isSyncedToGoogle: false,
+        });
       });
-    });
+    } else {
+      // If all ideas are already in calendar, guarantee Today has an active session and schedule next production steps
+      if (!hasTodayTask) {
+        const topIdea = ideas.find((i) => i.status === 'Ready to Shoot') || ideas[0];
+        if (topIdea) {
+          newEntries.push({
+            id: `cal_auto_today_${Date.now()}`,
+            title: `Filming Session: ${topIdea.title}`,
+            plannedDate: todayStr,
+            plannedTime: '16:30',
+            format: topIdea.format,
+            pillar: topIdea.pillar,
+            stage: 'Shooting',
+            status: 'Ready to Shoot',
+            ideaId: topIdea.id,
+            notes: `High-priority filming block scheduled for Today based on ${preferences.availableFilmingHoursPerWeek}h weekly filming capacity.`,
+            isSyncedToGoogle: false,
+          });
+        }
+      }
+
+      // Schedule follow-up editing session 2 days later if not already scheduled
+      const twoDaysLater = new Date(baseDate);
+      twoDaysLater.setDate(baseDate.getDate() + 2);
+      const twoDaysLaterStr = twoDaysLater.toISOString().split('T')[0];
+      if (!calendar.some((c) => c.plannedDate === twoDaysLaterStr)) {
+        const secondIdea = ideas[1] || ideas[0];
+        if (secondIdea) {
+          newEntries.push({
+            id: `cal_auto_edit_${Date.now()}`,
+            title: `Post-Production & Cut: ${secondIdea.title}`,
+            plannedDate: twoDaysLaterStr,
+            plannedTime: '18:00',
+            format: secondIdea.format,
+            pillar: secondIdea.pillar,
+            stage: 'Editing',
+            status: 'Editing',
+            ideaId: secondIdea.id,
+            notes: `Editing session scheduled based on ${preferences.availableEditingHoursPerWeek}h weekly editing capacity.`,
+            isSyncedToGoogle: false,
+          });
+        }
+      }
+    }
 
     if (newEntries.length > 0) {
       setCalendar((prev) => {
@@ -666,6 +729,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         writeStorage(STORAGE_KEYS.CALENDAR, next);
         return next;
       });
+      return {
+        count: newEntries.length,
+        message: `Successfully scheduled ${newEntries.length} production task${newEntries.length > 1 ? 's' : ''} starting Today (${todayStr})!`,
+      };
+    } else {
+      return {
+        count: 0,
+        message: `Your calendar is already optimally balanced with active tasks starting Today (${todayStr})!`,
+      };
     }
   };
 

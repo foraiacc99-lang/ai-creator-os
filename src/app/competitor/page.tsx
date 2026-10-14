@@ -76,6 +76,16 @@ export default function CompetitorResearchPage() {
     setNotes('');
   };
 
+  const handleDeleteCreator = (id: string) => {
+    const remaining = competitors.filter((c) => c.id !== id);
+    deleteCompetitorWatchlist(id);
+    if (remaining.length > 0) {
+      setActiveCompetitorId(remaining[0].id);
+    } else {
+      setActiveCompetitorId('');
+    }
+  };
+
   const handleAnalyzePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeCompetitor) return;
@@ -212,7 +222,7 @@ export default function CompetitorResearchPage() {
                   Last researched: {formatDate(activeCompetitor.lastResearchedDate)}
                 </span>
                 <button
-                  onClick={() => deleteCompetitorWatchlist(activeCompetitor.id)}
+                  onClick={() => handleDeleteCreator(activeCompetitor.id)}
                   className="text-neutral-400 hover:text-rose-600 p-1 cursor-pointer"
                   title="Remove creator from watchlist"
                 >

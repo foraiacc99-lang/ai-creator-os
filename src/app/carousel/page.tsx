@@ -128,6 +128,27 @@ export default function CarouselStudioPage() {
     });
   };
 
+  const handleDeleteCarousel = (id: string) => {
+    const remaining = carousels.filter((c) => c.id !== id);
+    deleteCarouselProject(id);
+    if (remaining.length > 0) {
+      setActiveCarouselId(remaining[0].id);
+      setCurrentSlideIndex(0);
+    } else {
+      setActiveCarouselId('');
+    }
+  };
+
+  const handleDeleteStory = (id: string) => {
+    const remaining = stories.filter((s) => s.id !== id);
+    deleteStorySequence(id);
+    if (remaining.length > 0) {
+      setActiveStoryId(remaining[0].id);
+    } else {
+      setActiveStoryId('');
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Top Banner */}
@@ -148,13 +169,68 @@ export default function CarouselStudioPage() {
 
         <div className="flex items-center gap-2">
           {activeTab === 'carousel' ? (
-            <Button onClick={handleCreateBlankCarousel} variant="primary" size="sm" className="text-xs">
-              <Plus className="w-3.5 h-3.5 mr-1" /> New Carousel
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {carousels.length > 1 && (
+                <select
+                  value={activeCarousel?.id}
+                  onChange={(e) => {
+                    setActiveCarouselId(e.target.value);
+                    setCurrentSlideIndex(0);
+                  }}
+                  className="px-2.5 py-1.5 text-xs font-semibold border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer max-w-[180px] truncate"
+                >
+                  {carousels.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <Button onClick={handleCreateBlankCarousel} variant="primary" size="sm" className="text-xs cursor-pointer">
+                <Plus className="w-3.5 h-3.5 mr-1" /> New Carousel
+              </Button>
+              {activeCarousel && (
+                <Button
+                  onClick={() => handleDeleteCarousel(activeCarousel.id)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 cursor-pointer"
+                  title="Delete this carousel project"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" /> Delete
+                </Button>
+              )}
+            </div>
           ) : (
-            <Button onClick={() => handleCreateStorySequence('progress')} variant="primary" size="sm" className="text-xs">
-              <Plus className="w-3.5 h-3.5 mr-1" /> New Story Sequence
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {stories.length > 1 && (
+                <select
+                  value={activeStory?.id}
+                  onChange={(e) => setActiveStoryId(e.target.value)}
+                  className="px-2.5 py-1.5 text-xs font-semibold border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer max-w-[180px] truncate"
+                >
+                  {stories.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.title}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <Button onClick={() => handleCreateStorySequence('progress')} variant="primary" size="sm" className="text-xs cursor-pointer">
+                <Plus className="w-3.5 h-3.5 mr-1" /> New Story Sequence
+              </Button>
+              {activeStory && (
+                <Button
+                  onClick={() => handleDeleteStory(activeStory.id)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 cursor-pointer"
+                  title="Delete this story sequence"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" /> Delete
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>

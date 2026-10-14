@@ -56,10 +56,13 @@ export default function CalendarPage() {
   const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
   const [syncingEntryId, setSyncingEntryId] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<{ id: string; success: boolean; text: string } | null>(null);
+  const [autoPlanResult, setAutoPlanResult] = useState<{ message: string; success: boolean } | null>(null);
+
+  const todayStr = new Date().toISOString().split('T')[0];
 
   // New entry form state
   const [title, setTitle] = useState('');
-  const [plannedDate, setPlannedDate] = useState('2026-10-14');
+  const [plannedDate, setPlannedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [plannedTime, setPlannedTime] = useState('17:00');
   const [format, setFormat] = useState<ContentFormat>('REELS');
   const [pillar, setPillar] = useState<ContentPillar>('BUILDING_PROJECTS_AND_SYSTEMS');
@@ -70,6 +73,12 @@ export default function CalendarPage() {
   const filteredEntries = calendar.filter(
     (e) => filterStage === 'ALL' || e.stage === filterStage
   );
+
+  const handleAutoPlan = () => {
+    const res = autoPlanRealisticSchedule();
+    setAutoPlanResult({ message: res.message, success: res.count > 0 });
+    setTimeout(() => setAutoPlanResult(null), 5000);
+  };
 
   const handleCreateEntry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,22 +130,46 @@ export default function CalendarPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           <Button
-            onClick={() => autoPlanRealisticSchedule()}
+            onClick={handleAutoPlan}
             variant="outline"
             size="sm"
-            className="text-xs"
-            title="Auto-plan realistic slots for unscheduled ideas"
+            className="text-xs font-semibold hover:border-purple-500 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer"
+            title="Auto-plan realistic slots for unscheduled ideas starting today"
           >
             <Sparkles className="w-3.5 h-3.5 mr-1 text-purple-600" />
             AI Realistic Auto-Plan
           </Button>
 
-          <Button onClick={() => setAddModalOpen(true)} variant="primary" size="sm" className="text-xs">
+          <Button
+            onClick={() => {
+              setPlannedDate(new Date().toISOString().split('T')[0]);
+              setAddModalOpen(true);
+            }}
+            variant="primary"
+            size="sm"
+            className="text-xs cursor-pointer"
+          >
             <Plus className="w-3.5 h-3.5 mr-1" />
             Add Calendar Task
           </Button>
         </div>
       </div>
+
+      {/* Auto Plan Feedback Toast */}
+      {autoPlanResult && (
+        <div className="p-4 rounded-xl text-xs flex items-center justify-between gap-3 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 text-purple-950 dark:text-purple-200 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+            <span className="font-semibold">{autoPlanResult.message}</span>
+          </div>
+          <button
+            onClick={() => setAutoPlanResult(null)}
+            className="text-purple-600 dark:text-purple-400 hover:text-purple-900 cursor-pointer text-sm font-bold px-1"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* Google Calendar Connection Status Banner */}
       <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -251,6 +284,21 @@ export default function CalendarPage() {
         </div>
       )}
 
+      {/* If no task for today, show helper alert */}
+      {!calendar.some((c) => c.plannedDate === todayStr) && (
+        <div className="p-4 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="font-semibold">
+              No tasks currently scheduled for today ({todayStr}). Click &quot;AI Realistic Auto-Plan&quot; to automatically schedule today&apos;s filming session!
+            </span>
+          </div>
+          <Button onClick={handleAutoPlan} variant="primary" size="sm" className="text-xs shrink-0 bg-amber-600 hover:bg-amber-700 text-white cursor-pointer">
+            <Sparkles className="w-3.5 h-3.5 mr-1" /> Auto-Schedule Today
+          </Button>
+        </div>
+      )}
+
       {/* CALENDAR ENTRIES DISPLAY */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -263,10 +311,18 @@ export default function CalendarPage() {
                 className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all"
               >
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-neutral-400 font-mono">
-                      {formatDate(entry.plannedDate)} • {entry.plannedTime || '17:00'}
-                    </span>
+                  <div className="flex items-center justify-between text-[11px] gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-neutral-400 font-mono">
+                        {formatDate(entry.plannedDate)} • {entry.plannedTime || '17:00'}
+                      </span>
+                      {entry.plannedDate === todayStr && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                          TODAY
+                        </span>
+                      )}
+                    </div>
 
                     <Badge
                       variant={entry.isSyncedToGoogle ? 'success' : 'outline'}
@@ -346,8 +402,14 @@ export default function CalendarPage() {
             {filteredEntries.map((entry) => (
               <div key={entry.id} className="p-4 flex items-center justify-between gap-4 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-neutral-400 text-[11px]">{entry.plannedDate}</span>
+                    {entry.plannedDate === todayStr && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        TODAY
+                      </span>
+                    )}
                     <Badge variant="outline" className="text-[10px] py-0">{entry.format}</Badge>
                     <Badge variant={entry.isSyncedToGoogle ? 'success' : 'secondary'} className="text-[10px] py-0">
                       {entry.isSyncedToGoogle ? 'Google Synced' : 'Local'}
