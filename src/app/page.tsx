@@ -1,464 +1,600 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/storage/store';
 import { MetricCard } from '@/components/ui/metric-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatNumber, formatPercent } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import {
-  Users,
-  Eye,
-  TrendingUp,
   Sparkles,
   ArrowRight,
   Video,
   FileEdit,
   Calendar,
   CheckCircle2,
-  Award,
-  Zap,
   Clock,
-  Layers,
-  ChevronRight,
   Lightbulb,
+  Search,
+  Plus,
+  BookOpen,
+  TrendingUp,
+  FileText,
+  AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
 export default function HomePage() {
   const router = useRouter();
   const {
-    account,
-    posts,
-    dailyInsights,
+    snapshots,
     ideas,
     scripts,
     calendar,
-    autoPlanNext7Days,
-    isDemoMode,
+    research,
+    reports,
+    autoPlanRealisticSchedule,
+    preferences,
+    addGrowthSnapshot,
   } = useApp();
 
-  // Aggregate metrics
-  const totalViews = posts.reduce((sum, p) => sum + (p.metrics.views || 0), 0);
-  const totalReach = posts.reduce((sum, p) => sum + (p.metrics.reach || 0), 0);
-  const avgER =
-    posts.length > 0
-      ? (posts.reduce((sum, p) => sum + (p.metrics.engagementRate || 0), 0) / posts.length).toFixed(1)
-      : '0.0';
+  const [addSnapshotOpen, setAddSnapshotOpen] = useState(false);
+  const [newDate, setNewDate] = useState('2026-10-14');
+  const [newFollowers, setNewFollowers] = useState<number>(5200);
+  const [newReach, setNewReach] = useState<number>(42000);
+  const [newViews, setNewViews] = useState<number>(65000);
+  const [newER, setNewER] = useState<number>(6.8);
+  const [newNotes, setNewNotes] = useState('');
 
-  // Top performing post
-  const topPost = [...posts].sort(
-    (a, b) => (b.metrics.engagementRate || 0) - (a.metrics.engagementRate || 0)
-  )[0];
+  // Latest manual snapshot
+  const latestSnapshot = snapshots[0] || null;
+  const prevSnapshot = snapshots[1] || null;
 
-  // Draft / Ready scripts
-  const readyScript = scripts.find((s) => s.status === 'ready_for_filming') || scripts[0];
-  const upcomingPosts = calendar.slice(0, 3);
+  const followerChange =
+    latestSnapshot && prevSnapshot && prevSnapshot.totalFollowers > 0
+      ? +(((latestSnapshot.totalFollowers - prevSnapshot.totalFollowers) / prevSnapshot.totalFollowers) * 100).toFixed(1)
+      : undefined;
 
-  // Daily actionable priorities
-  const dailyPriorities = [
-    {
-      step: 1,
-      title: 'Film highest-priority script: "Voice Mimicry Masterclass"',
-      description: 'Ready for filming. Estimated duration: 37 seconds. Focus on crisp opening hook.',
-      link: '/scripts',
-      actionText: 'Open Script Studio',
-      icon: Video,
-      status: 'High Priority',
-    },
-    {
-      step: 2,
-      title: 'Review Retention Audit for Local Ollama Benchmark',
-      description: 'Reel Analyzer flagged repeated phrases between 0:22 and 0:34. Tighten pacing before posting.',
-      link: '/reel-analyzer',
-      actionText: 'Review Audit',
-      icon: Zap,
-      status: 'Pacing Check',
-    },
-    {
-      step: 3,
-      title: 'Dissect top save driver: Solo Founder Tech Stack',
-      description: 'Post generated 4.8k saves (9.3% ER). Turn slide 3 agent architecture into a follow-up Reel.',
-      link: '/analytics',
-      actionText: 'Analyze Diagnostics',
-      icon: Award,
-      status: 'Growth Signal',
-    },
-    {
-      step: 4,
-      title: 'Finalize Thursday carousel slides in Content Calendar',
-      description: 'Scheduled: "2026 Developer Salary Paradox". Check visual contrast on slide 4.',
-      link: '/calendar',
-      actionText: 'View Calendar',
-      icon: Calendar,
-      status: 'Scheduled',
-    },
-  ];
+  const reachChange =
+    latestSnapshot && prevSnapshot && prevSnapshot.reach > 0
+      ? +(((latestSnapshot.reach - prevSnapshot.reach) / prevSnapshot.reach) * 100).toFixed(1)
+      : undefined;
 
-  const handleGeneratePlan = () => {
-    autoPlanNext7Days();
-    router.push('/calendar');
+  const viewsChange =
+    latestSnapshot && prevSnapshot && prevSnapshot.totalViews > 0
+      ? +(((latestSnapshot.totalViews - prevSnapshot.totalViews) / prevSnapshot.totalViews) * 100).toFixed(1)
+      : undefined;
+
+  // Real Weekly Progress from application records
+  const contentPlannedCount = calendar.filter((c) => c.status !== 'Archived').length;
+  const scriptsCompletedCount = scripts.filter((s) => s.status !== 'draft').length;
+  const videosShotCount = calendar.filter((c) => c.stage === 'Shooting' || c.status === 'Shot').length;
+  const videosEditedCount = calendar.filter((c) => c.stage === 'Editing' || c.status === 'Editing').length;
+  const contentPublishedCount = calendar.filter((c) => c.status === 'Published').length;
+  const remainingWorkCount = calendar.filter((c) => c.status !== 'Published').length;
+
+  // Today's Focus determination
+  const scriptReadyToShoot = scripts.find((s) => s.status === 'ready_for_filming');
+  const ideaReadyToScript = ideas.find((i) => i.status === 'Ready to Script');
+  const todayCalendarTask = calendar.find((c) => c.plannedDate === newDate);
+
+  const handleSaveSnapshot = (e: React.FormEvent) => {
+    e.preventDefault();
+    addGrowthSnapshot({
+      date: newDate,
+      totalFollowers: Number(newFollowers),
+      reach: Number(newReach),
+      totalViews: Number(newViews),
+      engagementRate: Number(newER),
+      notes: newNotes,
+      reportingPeriod: 'Weekly',
+    });
+    setAddSnapshotOpen(false);
+    setNewNotes('');
   };
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Account Hero Banner */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            {account.profilePictureUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={account.profilePictureUrl}
-                alt={account.username}
-                className="w-14 h-14 rounded-full object-cover ring-2 ring-neutral-200"
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-lg">
-                {account.username ? account.username[0]?.toUpperCase() : 'IG'}
-              </div>
-            )}
-            <span
-              className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ring-2 ring-white ${
-                account.isConnected ? 'bg-emerald-500' : 'bg-amber-400'
-              }`}
-            />
+      {/* Top Banner: Creator Focus & Persona */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              Solo Creator Command Center
+            </h2>
+            <Badge variant="purple" className="text-xs font-mono">
+              Empirical OS
+            </Badge>
           </div>
-
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-neutral-900 tracking-tight">
-                @{account.username || 'Not Connected'}
-              </h2>
-              <Badge variant={account.isConnected ? 'success' : 'warning'} className="text-[11px]">
-                {isDemoMode ? 'Demo Workspace' : account.isConnected ? 'Verified Creator' : 'Offline'}
-              </Badge>
-            </div>
-            <p className="text-xs text-neutral-500 mt-1 max-w-xl">
-              {account.biography || 'AI Creator OS is actively monitoring your content metrics and recommending your next best posts.'}
-            </p>
-          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-2xl">
+            Documenting projects, learning sales, building automation systems, and growing without social media vanity metrics.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
-            onClick={handleGeneratePlan}
-            variant="primary"
-            className="w-full md:w-auto bg-neutral-900 hover:bg-neutral-800 text-white shadow-sm font-semibold text-xs"
+            onClick={() => {
+              autoPlanRealisticSchedule();
+              router.push('/calendar');
+            }}
+            variant="outline"
+            size="sm"
+            className="text-xs"
           >
-            <Sparkles className="w-3.5 h-3.5 mr-2 text-amber-300" />
-            Generate My Next Content Plan
+            <Calendar className="w-3.5 h-3.5 mr-1 text-neutral-500" />
+            Plan Week
+          </Button>
+
+          <Button
+            onClick={() => setAddSnapshotOpen(true)}
+            variant="primary"
+            size="sm"
+            className="text-xs"
+          >
+            <TrendingUp className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+            Log Growth Snapshot
           </Button>
         </div>
       </div>
 
-      {/* Primary KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          label="Total Followers"
-          value={formatNumber(account.followersCount)}
-          change={12.4}
-          changePeriod="vs previous 30d"
-          icon={<Users className="w-4 h-4" />}
-        />
-        <MetricCard
-          label="Recent Reach"
-          value={formatNumber(totalReach)}
-          change={18.2}
-          changePeriod="vs previous period"
-          icon={<Eye className="w-4 h-4" />}
-        />
-        <MetricCard
-          label="Total Content Views"
-          value={formatNumber(totalViews)}
-          change={24.8}
-          changePeriod="vs previous period"
-          icon={<Video className="w-4 h-4" />}
-        />
-        <MetricCard
-          label="Avg Engagement Rate"
-          value={`${avgER}%`}
-          change={5.1}
-          changePeriod="baseline: 5.2%"
-          icon={<TrendingUp className="w-4 h-4" />}
-        />
-      </div>
+      {/* TODAY'S FOCUS (Prompt Section 5) */}
+      <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 text-white dark:from-neutral-900 dark:to-neutral-950 dark:border dark:border-neutral-800 rounded-2xl p-6 shadow-md relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+          <Sparkles className="w-48 h-48 text-white" />
+        </div>
 
-      {/* Core Section: WHAT SHOULD I DO TODAY? */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">
-              <Zap className="w-4 h-4 text-amber-300" />
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-bold tracking-wider uppercase text-neutral-300">
+                Today&apos;s Recommended Production Focus
+              </span>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-neutral-900 tracking-tight">
-                WHAT SHOULD I DO TODAY?
-              </h3>
-              <p className="text-xs text-neutral-500">
-                AI synthesized priorities based on active scripts, pacing audits, and recent save signals.
-              </p>
-            </div>
+            <Badge variant="secondary" className="text-[11px] bg-neutral-800 text-neutral-200 border-neutral-700">
+              Allocated: {preferences.availableFilmingHoursPerWeek}h / week
+            </Badge>
           </div>
-          <Badge variant="purple" className="text-[11px] font-mono">
-            4 Action Items
-          </Badge>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-          {dailyPriorities.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.step}
-                className="group p-4 rounded-xl border border-neutral-200/80 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-300 transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-mono font-bold text-neutral-400">
-                      STEP 0{item.step}
-                    </span>
-                    <Badge variant="secondary" className="text-[10px]">
-                      {item.status}
-                    </Badge>
-                  </div>
-                  <h4 className="text-sm font-semibold text-neutral-900 leading-snug group-hover:text-black">
-                    {item.title}
-                  </h4>
-                  <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-neutral-200/60 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-                    <Icon className="w-3.5 h-3.5 text-neutral-600" />
-                  </div>
-                  <Link
-                    href={item.link}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-neutral-900 hover:text-neutral-700 transition-colors"
-                  >
-                    <span>{item.actionText}</span>
-                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </Link>
-                </div>
+          {scriptReadyToShoot ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Ready to Shoot
+                </span>
+                <span className="text-xs text-neutral-300 flex items-center gap-1 font-mono">
+                  <Clock className="w-3 h-3 text-neutral-400" /> ~{scriptReadyToShoot.estimatedDurationSeconds || 30}s speaking time
+                </span>
               </div>
-            );
-          })}
+              <h3 className="text-lg font-bold text-white tracking-tight">
+                {scriptReadyToShoot.title}
+              </h3>
+              <p className="text-xs text-neutral-300 max-w-2xl leading-relaxed">
+                Opening Hook: &ldquo;{scriptReadyToShoot.hookOptions?.[scriptReadyToShoot.selectedHookIndex] || scriptReadyToShoot.currentSpokenScript.slice(0, 80)}...&rdquo;
+              </p>
+              <div className="pt-2 flex items-center gap-3">
+                <Link href="/scripts">
+                  <Button variant="primary" size="sm" className="bg-white text-neutral-900 hover:bg-neutral-100 text-xs font-bold">
+                    <Video className="w-3.5 h-3.5 mr-1.5 text-neutral-900" />
+                    Open Teleprompter in Script Studio
+                  </Button>
+                </Link>
+                <Link href="/calendar" className="text-xs text-neutral-300 hover:text-white flex items-center gap-1">
+                  View in Content Calendar &rarr;
+                </Link>
+              </div>
+            </div>
+          ) : ideaReadyToScript ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  Ready to Script
+                </span>
+                <span className="text-xs text-neutral-300 font-mono">
+                  Est. Production: {ideaReadyToScript.estimatedProductionTime || 30} mins
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-white tracking-tight">
+                {ideaReadyToScript.title}
+              </h3>
+              <p className="text-xs text-neutral-300 max-w-2xl">
+                Angle: {ideaReadyToScript.mainAngle || ideaReadyToScript.hook}
+              </p>
+              <div className="pt-2">
+                <Link href="/scripts">
+                  <Button variant="primary" size="sm" className="bg-white text-neutral-900 hover:bg-neutral-100 text-xs font-bold">
+                    <FileEdit className="w-3.5 h-3.5 mr-1.5 text-neutral-900" />
+                    Write Script Now
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-white">No active script backlog for today!</h3>
+              <p className="text-xs text-neutral-300 max-w-xl">
+                Choose a recommendation from your AI Strategist or turn a saved research finding into your next video.
+              </p>
+              <div className="pt-2">
+                <Link href="/strategist">
+                  <Button variant="primary" size="sm" className="bg-white text-neutral-900 hover:bg-neutral-100 text-xs font-bold">
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5 text-purple-700" />
+                    Explore AI Strategist Recommendations
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Grid: 30-Day Growth Telemetry & Top Performing Post */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Growth Trend (2 cols) */}
-        <div className="lg:col-span-2 bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+      {/* MANUAL GROWTH METRICS (Prompt Section 5 & 15) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-bold text-neutral-900 tracking-tight">
-                30-Day Reach & Growth Telemetry
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                Manual Growth Metrics
               </h3>
-              <span className="text-xs text-neutral-400 font-mono">Real Ingested History</span>
+              <Badge variant="outline" className="text-[10px] font-mono">
+                100% Manually Entered Data
+              </Badge>
             </div>
-            <p className="text-xs text-neutral-500 mb-6">
-              Daily reach fluctuations against posting days and subscriber velocity.
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              Latest snapshot date: <span className="font-semibold text-neutral-800 dark:text-neutral-200">{latestSnapshot ? formatDate(latestSnapshot.date) : 'No snapshots'}</span>. Zero Instagram API dependencies.
             </p>
           </div>
 
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dailyInsights} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="reachGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#171717" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#171717" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(val) => val.slice(5)}
-                  stroke="#a3a3a3"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#a3a3a3"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  formatter={(value: any) => [value?.toLocaleString(), 'Reach']}
-                  labelFormatter={(lbl) => `Date: ${lbl}`}
-                  contentStyle={{
-                    backgroundColor: '#171717',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '12px',
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="reach"
-                  stroke="#171717"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#reachGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
-            <span>Peak Day: {dailyInsights.reduce((max, d) => (d.reach > max.reach ? d : max), dailyInsights[0])?.date}</span>
-            <Link href="/analytics" className="font-semibold text-neutral-900 hover:underline">
-              Full Analytics Breakdown &rarr;
-            </Link>
-          </div>
+          <Link href="/analytics" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:underline">
+            Growth Tracker &rarr;
+          </Link>
         </div>
 
-        {/* Top-Performing Post Spotlight (1 col) */}
-        {topPost && (
-          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="success" className="text-[10px]">
-                  Top Performer (9.32% ER)
-                </Badge>
-                <span className="text-[11px] text-neutral-400">{topPost.mediaType}</span>
-              </div>
-              <h3 className="text-sm font-bold text-neutral-900 line-clamp-2 leading-snug">
-                {topPost.caption}
-              </h3>
-            </div>
-
-            <div className="my-4 relative rounded-xl overflow-hidden aspect-video bg-neutral-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={topPost.thumbnailUrl}
-                alt="Post thumbnail"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-                <div className="text-white text-xs font-medium">
-                  {formatNumber(topPost.metrics.views)} Views • {formatNumber(topPost.metrics.saves)} Saves
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 text-xs space-y-1 mb-4">
-              <div className="font-semibold text-neutral-900 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                AI Diagnosis:
-              </div>
-              <p className="text-neutral-600 text-[11px] leading-relaxed">
-                {topPost.aiDiagnostic?.summary || 'Transparent financial metrics produced 43% higher bookmark saves than the baseline.'}
-              </p>
-            </div>
-
-            <Link
-              href="/analytics"
-              className="w-full py-2 text-center text-xs font-semibold text-neutral-900 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
-            >
-              Inspect Post Diagnostics
-            </Link>
+        {latestSnapshot ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <MetricCard
+              label="Total Followers"
+              value={latestSnapshot.totalFollowers.toLocaleString()}
+              change={followerChange}
+              changePeriod="vs previous snapshot"
+            />
+            <MetricCard
+              label="Reach"
+              value={latestSnapshot.reach.toLocaleString()}
+              change={reachChange}
+              changePeriod="vs previous snapshot"
+            />
+            <MetricCard
+              label="Total Views"
+              value={latestSnapshot.totalViews.toLocaleString()}
+              change={viewsChange}
+              changePeriod="vs previous snapshot"
+            />
+            <MetricCard
+              label="Engagement Rate"
+              value={`${latestSnapshot.engagementRate}%`}
+              subtitle={latestSnapshot.reportingPeriod || 'Configured ER'}
+            />
+          </div>
+        ) : (
+          <div className="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-center space-y-2">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">No growth snapshots recorded yet.</p>
+            <Button onClick={() => setAddSnapshotOpen(true)} variant="outline" size="sm" className="text-xs">
+              <Plus className="w-3.5 h-3.5 mr-1" /> Log Your First Snapshot
+            </Button>
           </div>
         )}
       </div>
 
-      {/* Upcoming Tasks & Ready Scripts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Next Script to Film */}
-        {readyScript && (
-          <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  Ready For Filming
-                </span>
-                <Badge variant="purple" className="text-[10px]">
-                  v{readyScript.version}
-                </Badge>
-              </div>
-              <h4 className="text-base font-bold text-neutral-900">{readyScript.title}</h4>
-              <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
-                &ldquo;{readyScript.hookOptions[readyScript.selectedHookIndex]}&rdquo;
-              </p>
-            </div>
-
-            <div className="mt-4 p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex items-center justify-between text-xs">
-              <span className="text-neutral-500">
-                Estimated Duration: <strong>{readyScript.estimatedDurationSeconds}s</strong>
-              </span>
-              <span className="text-neutral-500">
-                Shots: <strong>{readyScript.shotList.length}</strong>
-              </span>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-neutral-100 flex items-center justify-between">
-              <Link
-                href="/scripts"
-                className="text-xs font-semibold text-neutral-900 hover:text-neutral-700 flex items-center gap-1"
-              >
-                Open in Script Studio <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+      {/* WEEKLY PROGRESS (Prompt Section 5) */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+              Weekly Execution Progress (Real Records)
+            </h3>
           </div>
-        )}
+          <span className="text-xs font-mono text-neutral-400">
+            {remainingWorkCount} tasks remaining
+          </span>
+        </div>
 
-        {/* Scheduled Posts in Calendar */}
-        <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                Upcoming Content Queue
-              </span>
-              <Link href="/calendar" className="text-xs text-neutral-500 hover:text-neutral-900">
-                View All ({calendar.length}) &rarr;
-              </Link>
-            </div>
-            <h4 className="text-base font-bold text-neutral-900">Planned Schedule</h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+          <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-800">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Planned</span>
+            <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-1 block">{contentPlannedCount}</span>
           </div>
 
-          <div className="space-y-2.5 my-3">
-            {upcomingPosts.map((entry) => (
+          <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-800">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Scripted</span>
+            <span className="text-xl font-bold text-purple-700 dark:text-purple-400 mt-1 block">{scriptsCompletedCount}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-800">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Shot</span>
+            <span className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-1 block">{videosShotCount}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-800">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Edited</span>
+            <span className="text-xl font-bold text-blue-700 dark:text-blue-400 mt-1 block">{videosEditedCount}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-800">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Published</span>
+            <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-1 block">{contentPublishedCount}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-800">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Remaining</span>
+            <span className="text-xl font-bold text-neutral-700 dark:text-neutral-300 mt-1 block">{remainingWorkCount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* RESEARCH DISCOVERIES & QUICK ACTIONS GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Research Discoveries Feed (2 cols) */}
+        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-cyan-600" />
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                Recent Saved Research Discoveries
+              </h3>
+            </div>
+            <Link href="/saved" className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+              View Knowledge Base &rarr;
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {research.slice(0, 3).map((res) => (
               <div
-                key={entry.id}
-                className="p-3 rounded-xl border border-neutral-100 bg-neutral-50/50 flex items-center justify-between text-xs"
+                key={res.id}
+                className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-850 space-y-2 hover:border-neutral-300 transition-colors"
               >
-                <div>
-                  <div className="font-semibold text-neutral-900 line-clamp-1">{entry.title}</div>
-                  <div className="text-[11px] text-neutral-400 mt-0.5">
-                    {entry.plannedDate} • {entry.format} • {entry.objective}
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-xs text-neutral-900 dark:text-neutral-100">
+                      {res.title}
+                    </h4>
+                    <span className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5 block">
+                      {res.sourceName} • Retrieved {formatDate(res.retrievalDate)}
+                    </span>
                   </div>
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {res.confidenceStatus}
+                  </Badge>
                 </div>
-                <Badge variant="secondary" className="text-[10px] uppercase">
-                  {entry.status.replace('_', ' ')}
-                </Badge>
+
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">
+                  {res.summary}
+                </p>
+
+                {res.url && (
+                  <div className="pt-1 flex items-center justify-between text-xs">
+                    <a
+                      href={res.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-700 dark:text-cyan-400 hover:underline flex items-center gap-1 text-[11px]"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Source Link</span>
+                    </a>
+
+                    <Link
+                      href={`/ideas?researchId=${res.id}`}
+                      className="font-semibold text-neutral-900 dark:text-neutral-200 hover:underline text-[11px]"
+                    >
+                      Turn into Idea &rarr;
+                    </Link>
+                  </div>
+                )}
               </div>
             ))}
           </div>
+        </div>
 
-          <div className="pt-2 border-t border-neutral-100">
-            <Link
-              href="/calendar"
-              className="text-xs font-semibold text-neutral-900 hover:text-neutral-700 flex items-center gap-1"
-            >
-              Manage Calendar &rarr;
-            </Link>
+        {/* Quick Actions (1 col) */}
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+              Quick Creator Actions
+            </h3>
+
+            <div className="space-y-2 text-xs">
+              <Link
+                href="/ideas"
+                className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Lightbulb className="w-4 h-4 text-amber-500" />
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">Add Content Idea</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+
+              <Link
+                href="/scripts"
+                className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <FileEdit className="w-4 h-4 text-purple-600" />
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">Review a Script</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+
+              <Link
+                href="/carousel"
+                className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <BookOpen className="w-4 h-4 text-blue-600" />
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">Build Carousel Slides</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+
+              <Link
+                href="/competitor"
+                className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Search className="w-4 h-4 text-emerald-600" />
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">Analyze Competitor Post</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+
+              <Link
+                href="/reports"
+                className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <FileText className="w-4 h-4 text-pink-600" />
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">Add Report or Note</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800/70 border border-neutral-200 dark:border-neutral-700/80 text-[11px] text-neutral-500 dark:text-neutral-400 mt-4">
+            <span className="font-bold text-neutral-800 dark:text-neutral-200 block mb-0.5">Authenticity Notice</span>
+            All metrics and reports are entered directly by you. The AI operates on verified saved facts with zero external profile scraping.
           </div>
         </div>
       </div>
+
+      {/* LOG GROWTH SNAPSHOT MODAL */}
+      {addSnapshotOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                Log Manual Growth Snapshot
+              </h3>
+              <button
+                onClick={() => setAddSnapshotOpen(false)}
+                className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSnapshot} className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                  Snapshot Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={newDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Total Followers
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={newFollowers}
+                    onChange={(e) => setNewFollowers(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Total Reach
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={newReach}
+                    onChange={(e) => setNewReach(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Total Content Views
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={newViews}
+                    onChange={(e) => setNewViews(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Engagement Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    min={0}
+                    max={100}
+                    value={newER}
+                    onChange={(e) => setNewER(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                  Context / Notes (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Tested cold call video; saw spike in saved bookmarks."
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  onClick={() => setAddSnapshotOpen(false)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="sm" className="text-xs">
+                  Save Snapshot
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

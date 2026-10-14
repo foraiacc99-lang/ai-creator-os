@@ -4,20 +4,18 @@ import React, { useState } from 'react';
 import { useApp } from '@/lib/storage/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { CONTENT_PILLARS, ContentPillar } from '@/types';
 import {
   Sparkles,
   CheckCircle2,
   Cpu,
-  Sliders,
-  DownloadCloud,
-  TrendingUp,
   ArrowRight,
   ArrowLeft,
   X,
-  Play,
-  Check,
+  Clock,
+  Radio,
+  BookOpen,
 } from 'lucide-react';
-import { InstagramIcon } from '@/components/icons/instagram';
 
 interface OnboardingWizardProps {
   isOpen: boolean;
@@ -25,459 +23,319 @@ interface OnboardingWizardProps {
 }
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ isOpen, onClose }) => {
-  const { preferences, updatePreferences, account, connectInstagram, toggleDemoMode, aiConfig, updateAIConfig } = useApp();
+  const { preferences, updatePreferences, aiConfig, updateAIConfig, testAIConnection } = useApp();
   const [step, setStep] = useState(1);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncProgress, setSyncProgress] = useState(0);
+  const [testingOllama, setTestingOllama] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
-  // Local state for step 5 preferences
-  const [niche, setNiche] = useState(preferences.niche);
+  // Form states
   const [audience, setAudience] = useState(preferences.targetAudience);
   const [frequency, setFrequency] = useState(preferences.postingFrequencyPerWeek);
-  const [speakingStyle, setSpeakingStyle] = useState(preferences.speakingStyle);
   const [filmingHours, setFilmingHours] = useState(preferences.availableFilmingHoursPerWeek);
-  const [selectedModel, setSelectedModel] = useState(aiConfig.textModel);
+  const [editingHours, setEditingHours] = useState(preferences.availableEditingHoursPerWeek);
+  const [selectedPillars, setSelectedPillars] = useState<ContentPillar[]>([
+    'AI_TOOLS_AND_AUTOMATION',
+    'FREE_GITHUB_AND_DEV_TOOLS',
+    'SALES_PSYCHOLOGY_AND_CLIENT_ACQUISITION',
+    'WEBSITE_DEV_AND_SEO',
+  ]);
+  const [modelName, setModelName] = useState(aiConfig.textModel);
 
   if (!isOpen) return null;
 
-  const handleNext = () => {
-    if (step === 5) {
-      updatePreferences({
-        niche,
-        targetAudience: audience,
-        postingFrequencyPerWeek: frequency,
-        speakingStyle,
-        availableFilmingHoursPerWeek: filmingHours,
-      });
-      updateAIConfig({ textModel: selectedModel });
-    }
-    if (step < 7) {
-      setStep(step + 1);
+  const togglePillar = (id: ContentPillar) => {
+    if (selectedPillars.includes(id)) {
+      if (selectedPillars.length > 1) {
+        setSelectedPillars(selectedPillars.filter((p) => p !== id));
+      }
     } else {
-      updatePreferences({ onboardingCompleted: true });
-      onClose();
+      setSelectedPillars([...selectedPillars, id]);
     }
   };
 
-  const handleUseDemo = () => {
-    toggleDemoMode(true);
-    updatePreferences({ onboardingCompleted: true });
-    onClose();
+  const handleTestOllama = async () => {
+    setTestingOllama(true);
+    setTestResult(null);
+    const res = await testAIConnection();
+    setTestResult(res.message);
+    setTestingOllama(false);
   };
 
-  const runImportSimulation = () => {
-    setIsSyncing(true);
-    setSyncProgress(10);
-    const interval = setInterval(() => {
-      setSyncProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsSyncing(false);
-          return 100;
-        }
-        return prev + 20;
-      });
-    }, 350);
+  const handleComplete = () => {
+    updatePreferences({
+      targetAudience: audience,
+      postingFrequencyPerWeek: frequency,
+      availableFilmingHoursPerWeek: filmingHours,
+      availableEditingHoursPerWeek: editingHours,
+      onboardingCompleted: true,
+    });
+    updateAIConfig({
+      textModel: modelName,
+    });
+    onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Progress header */}
-        <div className="px-6 pt-5 pb-4 border-b border-neutral-100 flex items-center justify-between">
+      <div className="relative w-full max-w-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">
-              {step}
+            <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center font-bold text-xs">
+              OS
             </div>
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                Setup Wizard • Step {step} of 7
-              </div>
-              <div className="text-sm font-semibold text-neutral-900">
-                {step === 1 && 'Welcome to AI Creator OS'}
-                {step === 2 && 'Connect Your Instagram Account'}
-                {step === 3 && 'Verify Account Telemetry'}
-                {step === 4 && 'Select Your AI Inference Model'}
-                {step === 5 && 'Set Content Preferences & Constraints'}
-                {step === 6 && 'Import Historical Media & Scripts'}
-                {step === 7 && 'Initial Intelligence Synthesis'}
-              </div>
-            </div>
+            <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">Setup Your Workspace</span>
           </div>
-
-          <button
-            onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-600 rounded-lg hover:bg-neutral-100"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-neutral-400">Step {step} of 4</span>
+            <button
+              onClick={onClose}
+              className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Step progress bar */}
-        <div className="w-full bg-neutral-100 h-1">
-          <div
-            className="bg-neutral-900 h-1 transition-all duration-300"
-            style={{ width: `${(step / 7) * 100}%` }}
-          />
-        </div>
-
-        {/* Body content */}
-        <div className="p-6 overflow-y-auto flex-1">
-          {/* STEP 1: Welcome */}
+        {/* Content body */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-6">
           {step === 1 && (
             <div className="space-y-4">
-              <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-200/80">
-                <h3 className="text-base font-semibold text-neutral-900">
-                  Your Personal AI-Powered Instagram Content Strategist
-                </h3>
-                <p className="mt-1 text-sm text-neutral-600 leading-relaxed">
-                  AI Creator OS analyzes your historical engagement, studies your speaking cadence, and generates
-                  ready-to-film scripts and data-driven recommendations tailored specifically to your audience.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-600">
-                <div className="p-3 border border-neutral-200 rounded-lg bg-white">
-                  <div className="font-semibold text-neutral-900 flex items-center gap-1.5 mb-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    No Fake Metrics
+              <Badge variant="purple" className="text-xs">
+                Welcome to AI Creator OS
+              </Badge>
+              <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                Your Personal Content Strategist & Growth Engine
+              </h2>
+              <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                AI Creator OS is built for solo creators documenting technical projects, building software, learning sales, and growing a business without enterprise fluff or social media bloat.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 space-y-1">
+                  <div className="flex items-center gap-2 font-semibold text-xs text-neutral-900 dark:text-neutral-200">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Zero API Cost by Default</span>
                   </div>
-                  Analyzes verified platform insights, reach, retention, and save ratios.
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Runs 100% locally with Ollama. No mandatory subscriptions or surprise charges.
+                  </p>
                 </div>
-                <div className="p-3 border border-neutral-200 rounded-lg bg-white">
-                  <div className="font-semibold text-neutral-900 flex items-center gap-1.5 mb-1">
-                    <Cpu className="w-3.5 h-3.5 text-purple-600" />
-                    Open-Source AI Ready
+                <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 space-y-1">
+                  <div className="flex items-center gap-2 font-semibold text-xs text-neutral-900 dark:text-neutral-200">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Manual Growth Telemetry</span>
                   </div>
-                  Runs natively with local Ollama models (Llama 3.2, Mistral) or remote endpoints.
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    No Instagram password or Graph API connection required. You enter your snapshots manually.
+                  </p>
                 </div>
-                <div className="p-3 border border-neutral-200 rounded-lg bg-white">
-                  <div className="font-semibold text-neutral-900 flex items-center gap-1.5 mb-1">
-                    <Sliders className="w-3.5 h-3.5 text-blue-600" />
-                    Personal Style Profile
-                  </div>
-                  Learns your rhythm, vocabulary, and forbidden corporate fluff words.
-                </div>
-                <div className="p-3 border border-neutral-200 rounded-lg bg-white">
-                  <div className="font-semibold text-neutral-900 flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                    7-Day Auto Scheduler
-                  </div>
-                  Turns strategic recommendations into a managed production calendar.
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-between border-t border-neutral-100">
-                <button
-                  onClick={handleUseDemo}
-                  className="text-xs font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-4"
-                >
-                  ⚡ Skip setup & explore in Demo Mode with sample creator data
-                </button>
               </div>
             </div>
           )}
 
-          {/* STEP 2: Connect Instagram */}
           {step === 2 && (
             <div className="space-y-4">
-              <p className="text-sm text-neutral-600">
-                Connect your Instagram Creator or Business account via the official Meta OAuth authorization flow.
-              </p>
-
-              <div className="p-5 border border-neutral-200 rounded-xl bg-neutral-50/50 flex flex-col items-center text-center">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center mb-3 shadow-sm">
-                  <InstagramIcon className="w-6 h-6" />
-                </div>
-                <h4 className="text-sm font-semibold text-neutral-900">Meta Instagram Graph API</h4>
-                <p className="text-xs text-neutral-500 mt-1 max-w-sm">
-                  Requires Instagram Business or Creator account connected to a Facebook Page with{' '}
-                  <code className="text-neutral-700 font-mono text-[11px]">instagram_basic</code> and{' '}
-                  <code className="text-neutral-700 font-mono text-[11px]">instagram_manage_insights</code> permissions.
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Select Your Content Pillars</h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Choose the core pillars you focus on. These can be adjusted anytime in Settings.
                 </p>
-
-                <div className="mt-4 flex flex-col sm:flex-row gap-2 w-full max-w-xs">
-                  <a
-                    href="/api/instagram/auth"
-                    className="inline-flex items-center justify-center w-full px-4 py-2 text-xs font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg shadow-xs transition-colors"
-                  >
-                    Connect Instagram via Meta
-                  </a>
-                </div>
-
-                <div className="mt-3 text-[11px] text-neutral-400">
-                  Or enter your public handle to test simulated account linking:
-                </div>
-                <div className="mt-2 flex gap-2 w-full max-w-xs">
-                  <input
-                    type="text"
-                    defaultValue="swaraj.creates"
-                    id="wizard_handle_input"
-                    placeholder="your.handle"
-                    className="flex-1 px-3 py-1.5 text-xs border border-neutral-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                  />
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      const el = document.getElementById('wizard_handle_input') as HTMLInputElement;
-                      if (el?.value) connectInstagram(el.value);
-                    }}
-                  >
-                    Link
-                  </Button>
-                </div>
               </div>
-            </div>
-          )}
-
-          {/* STEP 3: Verify Account */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="p-4 border border-neutral-200 rounded-xl bg-white shadow-2xs">
-                <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={account.profilePictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop'}
-                    alt={account.username}
-                    className="w-12 h-12 rounded-full object-cover ring-2 ring-neutral-200"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-neutral-900">@{account.username}</span>
-                      <Badge variant="success" className="text-[10px]">
-                        Connected
-                      </Badge>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {account.accountType}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-neutral-500 mt-0.5">{account.name}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-neutral-100 text-center">
-                  <div className="p-2 bg-neutral-50 rounded-lg">
-                    <div className="text-xs text-neutral-400">Followers</div>
-                    <div className="text-sm font-bold text-neutral-900">
-                      {account.followersCount.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-2 bg-neutral-50 rounded-lg">
-                    <div className="text-xs text-neutral-400">Following</div>
-                    <div className="text-sm font-bold text-neutral-900">{account.followingCount}</div>
-                  </div>
-                  <div className="p-2 bg-neutral-50 rounded-lg">
-                    <div className="text-xs text-neutral-400">Media Count</div>
-                    <div className="text-sm font-bold text-neutral-900">{account.mediaCount}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: Select AI Model */}
-          {step === 4 && (
-            <div className="space-y-3">
-              <p className="text-sm text-neutral-600">
-                Choose the language model you want to power your Content Strategist, Script Studio, and Reel Analyzer.
-              </p>
 
               <div className="space-y-2">
-                {[
-                  {
-                    id: 'llama3.2',
-                    name: 'Llama 3.2 (3B / 8B)',
-                    type: 'Local Ollama',
-                    desc: 'Fast, completely private offline execution. Recommended for everyday script writing.',
-                  },
-                  {
-                    id: 'mistral',
-                    name: 'Mistral 7B Instruct',
-                    type: 'Local Ollama',
-                    desc: 'Balanced reasoning and strong structured JSON formatting.',
-                  },
-                  {
-                    id: 'gpt-4o-mini',
-                    name: 'OpenAI GPT-4o-mini',
-                    type: 'Cloud API',
-                    desc: 'High speed remote inference via standard OpenAI-compatible API key.',
-                  },
-                ].map((m) => (
-                  <label
-                    key={m.id}
-                    onClick={() => setSelectedModel(m.id)}
-                    className={`flex items-start justify-between p-3.5 rounded-xl border cursor-pointer transition-colors ${
-                      selectedModel === m.id
-                        ? 'border-neutral-900 bg-neutral-50 ring-1 ring-neutral-900'
-                        : 'border-neutral-200 hover:border-neutral-300'
-                    }`}
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-neutral-900">{m.name}</span>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {m.type}
-                        </Badge>
+                {CONTENT_PILLARS.map((pillar) => {
+                  const isSelected = selectedPillars.includes(pillar.id);
+                  return (
+                    <div
+                      key={pillar.id}
+                      onClick={() => togglePillar(pillar.id)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                        isSelected
+                          ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-800/70'
+                          : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
+                          {pillar.title}
+                        </div>
+                        <div className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-1 mt-0.5">
+                          {pillar.description}
+                        </div>
                       </div>
-                      <p className="text-[11px] text-neutral-500">{m.desc}</p>
-                    </div>
-                    {selectedModel === m.id && <Check className="w-4 h-4 text-neutral-900 shrink-0 mt-0.5" />}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* STEP 5: Set Content Preferences */}
-          {step === 5 && (
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-neutral-700">Content Niche</label>
-                <input
-                  type="text"
-                  value={niche}
-                  onChange={(e) => setNiche(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 border border-neutral-300 rounded-lg text-xs focus:ring-1 focus:ring-neutral-900"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-neutral-700">Target Audience</label>
-                <input
-                  type="text"
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 border border-neutral-300 rounded-lg text-xs focus:ring-1 focus:ring-neutral-900"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-neutral-700">Posts Per Week</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={14}
-                    value={frequency}
-                    onChange={(e) => setFrequency(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-1.5 border border-neutral-300 rounded-lg text-xs focus:ring-1 focus:ring-neutral-900"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-neutral-700">Filming Hours Available / Week</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={40}
-                    value={filmingHours}
-                    onChange={(e) => setFilmingHours(Number(e.target.value))}
-                    className="w-full mt-1 px-3 py-1.5 border border-neutral-300 rounded-lg text-xs focus:ring-1 focus:ring-neutral-900"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold text-neutral-700">Speaking Style / Voice</label>
-                <input
-                  type="text"
-                  value={speakingStyle}
-                  onChange={(e) => setSpeakingStyle(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 border border-neutral-300 rounded-lg text-xs focus:ring-1 focus:ring-neutral-900"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* STEP 6: Import Content */}
-          {step === 6 && (
-            <div className="space-y-4">
-              <p className="text-sm text-neutral-600">
-                Synchronizing media posts, Reels metrics, and captions to build your baseline model.
-              </p>
-
-              <div className="p-6 border border-neutral-200 rounded-xl bg-neutral-50 text-center space-y-3">
-                <DownloadCloud className="w-8 h-8 text-neutral-600 mx-auto" />
-                <div className="text-xs font-semibold text-neutral-900">Historical Ingestion Engine</div>
-                <p className="text-[11px] text-neutral-500 max-w-sm mx-auto">
-                  Fetches 30 days of reach, video watch time, save distributions, and hook performance.
-                </p>
-
-                {isSyncing ? (
-                  <div className="space-y-2 max-w-xs mx-auto">
-                    <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-neutral-900 h-2 transition-all duration-300"
-                        style={{ width: `${syncProgress}%` }}
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        className="rounded text-neutral-900 w-4 h-4 ml-3"
                       />
                     </div>
-                    <div className="text-[10px] text-neutral-500 font-mono">
-                      Ingesting media #{Math.round((syncProgress / 100) * 24)} of 24...
-                    </div>
-                  </div>
-                ) : (
-                  <Button onClick={runImportSimulation} variant="secondary" size="sm">
-                    {syncProgress === 100 ? 'Re-sync Media' : 'Start Data Ingestion'}
-                  </Button>
-                )}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* STEP 7: Generate Initial Analysis */}
-          {step === 7 && (
+          {step === 3 && (
             <div className="space-y-4">
-              <div className="p-4 border border-emerald-200 bg-emerald-50/50 rounded-xl">
-                <div className="flex items-center gap-2 text-emerald-800 font-semibold text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Account Analysis Synthesized!
-                </div>
-                <p className="text-xs text-emerald-700 mt-1">
-                  Your baseline engagement rate is <strong>5.2%</strong>. Your highest-converting formats are{' '}
-                  <strong>Technical Reels</strong> with under-2-second contrarian hooks.
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Realistic Production Capacity</h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  The AI plans achievable schedules based on your real availability, preventing burnout.
                 </p>
               </div>
 
-              <div className="p-4 border border-neutral-200 rounded-xl bg-white space-y-2">
-                <div className="text-xs font-semibold text-neutral-900 uppercase tracking-wide">
-                  Initial Priorities Ready:
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Target Audience
+                  </label>
+                  <input
+                    type="text"
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  />
                 </div>
-                <ul className="space-y-1.5 text-xs text-neutral-600">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
-                    <strong>Idea 1:</strong> Voice mimicry meta-prompting (Top save potential).
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
-                    <strong>Idea 2:</strong> Solo founder architecture breakdown (High reach potential).
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
-                    <strong>Calendar:</strong> 4 scheduled slots planned across your next 7 days.
-                  </li>
-                </ul>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1 mb-1">
+                      <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Filming Bandwidth (Hours/Week)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={40}
+                      value={filmingHours}
+                      onChange={(e) => setFilmingHours(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1 mb-1">
+                      <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Editing Bandwidth (Hours/Week)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={40}
+                      value={editingHours}
+                      onChange={(e) => setEditingHours(Number(e.target.value))}
+                      className="w-full px-3 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Target Publishing Cadence
+                  </label>
+                  <div className="flex gap-2">
+                    {[2, 3, 4, 5].map((cnt) => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => setFrequency(cnt)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
+                          frequency === cnt
+                            ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-neutral-900 dark:border-white'
+                            : 'border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+                        }`}
+                      >
+                        {cnt} posts / week
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">Local AI Configuration</h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  Connect your local Ollama instance for fast, private, zero-cost intelligence.
+                </p>
+              </div>
+
+              <div className="p-4 border border-neutral-200 dark:border-neutral-800 rounded-xl bg-neutral-50/70 dark:bg-neutral-800/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                      Ollama Endpoint: {aiConfig.endpoint}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={handleTestOllama}
+                    variant="outline"
+                    size="sm"
+                    isLoading={testingOllama}
+                    className="text-xs"
+                  >
+                    Test Connection
+                  </Button>
+                </div>
+
+                {testResult && (
+                  <div className="p-2.5 rounded-lg text-xs bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300">
+                    {testResult}
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Select Local Model
+                  </label>
+                  <select
+                    value={modelName}
+                    onChange={(e) => setModelName(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+                  >
+                    {aiConfig.availableModels.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                Don&apos;t have Ollama running yet? You can still use the app with instant templates and configure Ollama anytime in Settings.
+              </p>
             </div>
           )}
         </div>
 
-        {/* Wizard Footer Navigation */}
-        <div className="px-6 py-4 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={step === 1}
-            onClick={() => setStep(step - 1)}
-            className="text-xs"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            Previous
-          </Button>
+        {/* Footer controls */}
+        <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-950/50">
+          {step > 1 ? (
+            <Button onClick={() => setStep(step - 1)} variant="outline" size="sm" className="text-xs">
+              <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+              Back
+            </Button>
+          ) : (
+            <div />
+          )}
 
-          <Button variant="primary" size="sm" onClick={handleNext} className="text-xs">
-            {step === 7 ? 'Enter Creator Dashboard' : 'Next Step'}
-            <ArrowRight className="w-3.5 h-3.5 ml-1" />
-          </Button>
+          {step < 4 ? (
+            <Button onClick={() => setStep(step + 1)} variant="primary" size="sm" className="text-xs">
+              Continue
+              <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </Button>
+          ) : (
+            <Button onClick={handleComplete} variant="primary" size="sm" className="text-xs">
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+              Enter AI Creator OS
+            </Button>
+          )}
         </div>
       </div>
     </div>

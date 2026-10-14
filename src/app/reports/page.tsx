@@ -1,260 +1,462 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/storage/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatNumber, formatDate } from '@/lib/utils';
+import { CreatorReportNote, ReportCategory } from '@/types';
+import { formatDate } from '@/lib/utils';
 import {
   FileText,
-  Printer,
-  Download,
-  Calendar,
-  CheckCircle2,
+  Plus,
+  Trash2,
+  Edit,
   Sparkles,
-  TrendingUp,
-  Award,
-  Layers,
+  Search,
+  BookOpen,
+  Lightbulb,
+  Tag,
+  ArrowRight,
+  Bot,
+  User,
+  CheckCircle2,
 } from 'lucide-react';
 
+const CATEGORIES: ReportCategory[] = [
+  'Weekly Review',
+  'Content Performance',
+  'Sales Lessons',
+  'Website Projects',
+  'SEO Experiments',
+  'AI Automation',
+  'Learning Notes',
+  'Personal Reflections',
+];
+
 export default function ReportsPage() {
-  const { account, posts, experiments, calendar, recommendations, dailyInsights } = useApp();
-  const [reportRange, setReportRange] = useState<'weekly' | 'monthly'>('weekly');
+  const router = useRouter();
+  const { reports, addReportNote, updateReportNote, deleteReportNote, addIdea } = useApp();
 
-  const totalReach = posts.reduce((sum, p) => sum + (p.metrics.reach || 0), 0);
-  const totalViews = posts.reduce((sum, p) => sum + (p.metrics.views || 0), 0);
-  const totalSaves = posts.reduce((sum, p) => sum + (p.metrics.saves || 0), 0);
-  const avgER =
-    posts.length > 0
-      ? (posts.reduce((sum, p) => sum + (p.metrics.engagementRate || 0), 0) / posts.length).toFixed(1)
-      : '5.2';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('ALL');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingReportId, setEditingReportId] = useState<string | null>(null);
 
-  const handlePrint = () => {
-    window.print();
+  // Form State
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('2026-10-14');
+  const [category, setCategory] = useState<ReportCategory>('Sales Lessons');
+  const [observations, setObservations] = useState('');
+  const [lessonsLearned, setLessonsLearned] = useState('');
+  const [metrics, setMetrics] = useState('');
+  const [relatedContent, setRelatedContent] = useState('');
+  const [relatedProjects, setRelatedProjects] = useState('');
+  const [nextActions, setNextActions] = useState('');
+  const [tagsStr, setTagsStr] = useState('sales, cold-calling');
+
+  const filteredReports = reports.filter((r) => {
+    const matchesSearch =
+      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.observations.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.lessonsLearned.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCat = filterCategory === 'ALL' || r.category === filterCategory;
+    return matchesSearch && matchesCat;
+  });
+
+  const handleOpenAdd = () => {
+    setEditingReportId(null);
+    setTitle('');
+    setDate(new Date().toISOString().split('T')[0]);
+    setCategory('Sales Lessons');
+    setObservations('');
+    setLessonsLearned('');
+    setMetrics('');
+    setRelatedContent('');
+    setRelatedProjects('');
+    setNextActions('');
+    setTagsStr('');
+    setModalOpen(true);
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Topic', 'Format', 'Views', 'Reach', 'Likes', 'Comments', 'Shares', 'Saves', 'EngagementRate', 'Date'];
-    const rows = posts.map((p) => [
-      `"${p.topic || 'Untitled'}"`,
-      p.mediaType,
-      p.metrics.views,
-      p.metrics.reach,
-      p.metrics.likes,
-      p.metrics.comments,
-      p.metrics.shares,
-      p.metrics.saves,
-      `${p.metrics.engagementRate}%`,
-      p.timestamp.split('T')[0],
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ai_creator_os_${account.username}_analytics.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleOpenEdit = (r: CreatorReportNote) => {
+    setEditingReportId(r.id);
+    setTitle(r.title);
+    setDate(r.date);
+    setCategory(r.category);
+    setObservations(r.observations);
+    setLessonsLearned(r.lessonsLearned);
+    setMetrics(r.metrics || '');
+    setRelatedContent(r.relatedContent || '');
+    setRelatedProjects(r.relatedProjects || '');
+    setNextActions(r.nextActions || '');
+    setTagsStr((r.tags || []).join(', '));
+    setModalOpen(true);
   };
 
-  const handleExportJSON = () => {
-    const exportData = {
-      account,
-      posts,
-      experiments,
-      calendar,
-      recommendations,
-      exportedAt: new Date().toISOString(),
-      dataSource: 'Meta Instagram Graph API v21.0 / AI Creator OS',
-    };
+  const handleSaveReport = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
 
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportData, null, 2));
-    const link = document.createElement('a');
-    link.setAttribute('href', dataStr);
-    link.setAttribute('download', `ai_creator_os_${account.username}_backup.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const tags = tagsStr.split(',').map((t) => t.trim()).filter(Boolean);
+
+    if (editingReportId) {
+      updateReportNote(editingReportId, {
+        title: title.trim(),
+        date,
+        category,
+        observations,
+        lessonsLearned,
+        metrics,
+        relatedContent,
+        relatedProjects,
+        nextActions,
+        tags,
+      });
+    } else {
+      addReportNote({
+        title: title.trim(),
+        date,
+        category,
+        observations,
+        lessonsLearned,
+        metrics,
+        relatedContent,
+        relatedProjects,
+        nextActions,
+        tags,
+        isAiGenerated: false,
+      });
+    }
+
+    setModalOpen(false);
+  };
+
+  const handleTurnReportIntoIdea = (r: CreatorReportNote) => {
+    addIdea({
+      title: `Lesson: ${r.title}`,
+      pillar: 'BUILD_IN_PUBLIC_AND_JOURNEY',
+      topic: r.category,
+      targetAudience: 'Developers and small business owners',
+      format: 'REELS',
+      hook: `I documented this exact lesson so you don't have to make the same mistake.`,
+      mainAngle: r.lessonsLearned || r.observations,
+      supportingResearch: `Direct observation from personal creator log: ${r.title}`,
+      estimatedProductionTime: 30,
+      priority: 'High',
+      status: 'Inbox',
+      isAiGenerated: false,
+      tags: r.tags,
+    });
+    router.push('/ideas');
   };
 
   return (
-    <div className="space-y-8 pb-12 print:p-0">
-      {/* Top Banner (Hidden during print) */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+    <div className="space-y-6 pb-12">
+      {/* Top Banner */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-xl font-bold text-neutral-900 tracking-tight">Intelligence Reports & Exports</h2>
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+              Reports, Observations & Sprint Notes
+            </h2>
             <Badge variant="purple" className="text-xs font-mono">
-              Audited Summary
+              Personal Logs
             </Badge>
           </div>
-          <p className="text-xs text-neutral-500 max-w-2xl">
-            Generate formal performance summaries, export structured CSV/JSON analytics, or print PDF briefs.
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-2xl">
+            Manual workspace for weekly reviews, cold call experiments, and website delivery lessons. Turn real sprint reflections into authentic content ideas.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="inline-flex rounded-lg border border-neutral-200 bg-neutral-50 p-0.5 text-xs">
-            <button
-              onClick={() => setReportRange('weekly')}
-              className={`px-3 py-1.5 rounded-md font-medium ${
-                reportRange === 'weekly' ? 'bg-white shadow-2xs text-neutral-900' : 'text-neutral-500'
-              }`}
-            >
-              Weekly Brief
-            </button>
-            <button
-              onClick={() => setReportRange('monthly')}
-              className={`px-3 py-1.5 rounded-md font-medium ${
-                reportRange === 'monthly' ? 'bg-white shadow-2xs text-neutral-900' : 'text-neutral-500'
-              }`}
-            >
-              Monthly Executive
-            </button>
-          </div>
-
-          <Button onClick={handleExportCSV} variant="outline" size="sm" className="text-xs">
-            <Download className="w-3.5 h-3.5 mr-1" />
-            CSV Export
-          </Button>
-
-          <Button onClick={handleExportJSON} variant="outline" size="sm" className="text-xs">
-            <Download className="w-3.5 h-3.5 mr-1" />
-            JSON Data
-          </Button>
-
-          <Button
-            onClick={handlePrint}
-            variant="primary"
-            size="sm"
-            className="text-xs bg-neutral-900 hover:bg-neutral-800"
-          >
-            <Printer className="w-3.5 h-3.5 mr-1" />
-            Print / PDF
-          </Button>
-        </div>
+        <Button onClick={handleOpenAdd} variant="primary" size="sm" className="text-xs">
+          <Plus className="w-3.5 h-3.5 mr-1" /> Add Report / Note
+        </Button>
       </div>
 
-      {/* FORMAL PRINTABLE REPORT BRIEF */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-8 shadow-xs space-y-6 print:border-none print:shadow-none print:p-0">
-        {/* Document Header */}
-        <div className="border-b border-neutral-200 pb-5 flex items-start justify-between">
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">
-              AI CREATOR OS • OFFICIAL INTELLIGENCE BRIEF
-            </span>
-            <h1 className="text-2xl font-bold text-neutral-900 tracking-tight mt-1">
-              {reportRange === 'weekly' ? 'Weekly Creator Performance Brief' : 'Monthly Strategic Executive Report'}
-            </h1>
-            <div className="text-xs text-neutral-500 mt-1">
-              Account: <strong>@{account.username}</strong> • Verified Followers: {formatNumber(account.followersCount)}
-            </div>
+      {/* Filter and Search Bar */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-xl p-4 shadow-xs space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search reports by observations, lessons, or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-xs border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+            />
           </div>
 
-          <div className="text-right text-xs text-neutral-400 font-mono">
-            <div>Date Range: Last {reportRange === 'weekly' ? '7 Days' : '30 Days'}</div>
-            <div>Generated: Oct 14, 2026</div>
-            <div className="text-[10px] text-emerald-600 font-medium">Source: Verified Graph API</div>
-          </div>
-        </div>
+          <div className="flex items-center gap-2 overflow-x-auto text-xs pb-1 sm:pb-0">
+            <button
+              onClick={() => setFilterCategory('ALL')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 cursor-pointer ${
+                filterCategory === 'ALL'
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-bold'
+                  : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100'
+              }`}
+            >
+              All Categories ({reports.length})
+            </button>
 
-        {/* Executive Summary Metrics */}
-        <div className="grid grid-cols-4 gap-4 text-center">
-          <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100">
-            <div className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold">
-              Total Reach
-            </div>
-            <div className="text-xl font-bold text-neutral-900 mt-1">{formatNumber(totalReach)}</div>
-          </div>
-          <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100">
-            <div className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold">
-              Content Views
-            </div>
-            <div className="text-xl font-bold text-neutral-900 mt-1">{formatNumber(totalViews)}</div>
-          </div>
-          <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100">
-            <div className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold">
-              Bookmark Saves
-            </div>
-            <div className="text-xl font-bold text-neutral-900 mt-1">{formatNumber(totalSaves)}</div>
-          </div>
-          <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100">
-            <div className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold">
-              Avg Engagement
-            </div>
-            <div className="text-xl font-bold text-neutral-900 mt-1">{avgER}%</div>
-          </div>
-        </div>
-
-        {/* Top Performing Content Section */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-neutral-900 uppercase tracking-wider">
-            Top Performing Content In Range
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border border-neutral-200 rounded-lg overflow-hidden">
-              <thead className="bg-neutral-50 text-neutral-500 font-mono uppercase text-[10px]">
-                <tr>
-                  <th className="p-3">Topic / Hook</th>
-                  <th className="p-3">Format</th>
-                  <th className="p-3">Views</th>
-                  <th className="p-3">Saves</th>
-                  <th className="p-3">ER %</th>
-                  <th className="p-3">Primary Driver</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 text-neutral-800">
-                {posts.slice(0, 3).map((p) => (
-                  <tr key={p.id}>
-                    <td className="p-3 font-semibold">{p.topic}</td>
-                    <td className="p-3">{p.mediaType}</td>
-                    <td className="p-3 font-mono">{formatNumber(p.metrics.views)}</td>
-                    <td className="p-3 font-mono">{formatNumber(p.metrics.saves)}</td>
-                    <td className="p-3 font-mono font-bold text-emerald-700">{p.metrics.engagementRate}%</td>
-                    <td className="p-3 text-[11px] text-neutral-500">
-                      {p.aiDiagnostic?.whatWorked[0] || 'High save velocity'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Completed Experiments Summary */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-neutral-900 uppercase tracking-wider">
-            Content Experiments & Empirical Hypotheses
-          </h3>
-          <div className="space-y-2 text-xs">
-            {experiments.map((exp) => (
-              <div key={exp.id} className="p-4 bg-neutral-50 rounded-xl border border-neutral-200/80 space-y-1">
-                <div className="flex items-center justify-between font-bold text-neutral-900">
-                  <span>{exp.title}</span>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {exp.status}
-                  </Badge>
-                </div>
-                <p className="text-neutral-600 text-[11px]">
-                  <strong>Hypothesis:</strong> {exp.hypothesis}
-                </p>
-                {exp.findings && (
-                  <p className="text-emerald-800 text-[11px] pt-1">
-                    <strong>Findings:</strong> {exp.findings}
-                  </p>
-                )}
-              </div>
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCategory(cat)}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 cursor-pointer ${
+                  filterCategory === cat
+                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-bold'
+                    : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100'
+                }`}
+              >
+                {cat}
+              </button>
             ))}
           </div>
         </div>
-
-        {/* Legal Disclaimer */}
-        <div className="pt-4 border-t border-neutral-200 text-[10px] text-neutral-400">
-          Generated automatically by AI Creator OS. This report is compiled exclusively from authorized account telemetry
-          and mathematical regressions without subjective padding or unverified platform promises.
-        </div>
       </div>
+
+      {/* Reports Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredReports.map((r) => (
+          <div
+            key={r.id}
+            className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs flex flex-col justify-between space-y-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all text-xs"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-[11px]">
+                <Badge variant="secondary" className="text-[10px]">
+                  {r.category}
+                </Badge>
+                <span className="font-mono text-neutral-400">
+                  {formatDate(r.date)}
+                </span>
+              </div>
+
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 tracking-tight leading-snug">
+                {r.title}
+              </h3>
+
+              <div className="space-y-1.5">
+                <span className="font-semibold text-neutral-500 block text-[10px] uppercase">Main Observations:</span>
+                <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed line-clamp-3">
+                  {r.observations}
+                </p>
+              </div>
+
+              {r.lessonsLearned && (
+                <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-850 border border-neutral-200/70 dark:border-neutral-800 space-y-1">
+                  <span className="font-bold text-neutral-800 dark:text-neutral-200 block text-[11px]">
+                    Lessons Learned:
+                  </span>
+                  <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                    {r.lessonsLearned}
+                  </p>
+                </div>
+              )}
+
+              {r.metrics && (
+                <div className="text-[11px] text-neutral-500">
+                  <span className="font-semibold">Metrics: </span>
+                  <span>{r.metrics}</span>
+                </div>
+              )}
+
+              {r.tags && r.tags.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  {r.tags.map((t, i) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-2">
+              <Button
+                onClick={() => handleTurnReportIntoIdea(r)}
+                variant="outline"
+                size="sm"
+                className="text-xs h-7 px-2.5"
+              >
+                <Lightbulb className="w-3 h-3 mr-1 text-amber-500" />
+                Turn into Content Idea
+              </Button>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleOpenEdit(r)}
+                  className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded cursor-pointer"
+                  title="Edit report"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => deleteReportNote(r.id)}
+                  className="p-1.5 text-neutral-400 hover:text-rose-600 rounded cursor-pointer"
+                  title="Delete report"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {filteredReports.length === 0 && (
+        <div className="p-12 text-center bg-white dark:bg-neutral-900 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl space-y-3">
+          <FileText className="w-8 h-8 text-neutral-400 mx-auto" />
+          <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+            No reports or sprint notes recorded yet
+          </h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-sm mx-auto">
+            Document your cold call reflections, client delivery learnings, or weekly sprint progress.
+          </p>
+          <Button onClick={handleOpenAdd} variant="primary" size="sm">
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add Your First Note
+          </Button>
+        </div>
+      )}
+
+      {/* ADD / EDIT REPORT MODAL */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+                {editingReportId ? 'Edit Report / Note' : 'Add Report or Note'}
+              </h3>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveReport} className="space-y-3 text-xs">
+              <div>
+                <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Weekly Review: 25 Cold Calls to Local Dentists"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as ReportCategory)}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 cursor-pointer"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                  Main Observations
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="What specifically happened? (e.g. 25 calls, 14 voicemails, 8 answered, 3 video audits accepted)"
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                  Lessons Learned
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="What is the key takeaway? What will you do differently next time?"
+                  value={lessonsLearned}
+                  onChange={(e) => setLessonsLearned(e.target.value)}
+                  className="w-full p-2.5 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Metrics / Outcome (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 3 video reviews requested, $350 booked"
+                    value={metrics}
+                    onChange={(e) => setMetrics(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Tags (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="sales, dentists, cold-calling"
+                    value={tagsStr}
+                    onChange={(e) => setTagsStr(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800">
+                <Button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="sm" className="text-xs">
+                  Save Note
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

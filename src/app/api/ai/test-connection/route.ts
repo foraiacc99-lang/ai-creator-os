@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { testAIConnection } from '@/lib/ai/service';
+import { AIProviderConfig } from '@/types';
 
 export async function POST(req: NextRequest) {
   try {
-    const config = await req.json();
+    const body = await req.json();
+    const config: AIProviderConfig = body.aiConfig || body;
     const result = await testAIConnection(config);
     return NextResponse.json(result);
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as Error;
     return NextResponse.json(
-      { success: false, message: e.message || 'Failed to test connection' },
+      { success: false, message: err.message || 'Failed to test connection' },
       { status: 500 }
     );
   }

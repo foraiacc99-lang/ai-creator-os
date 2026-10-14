@@ -12,7 +12,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [wizardOpen, setWizardOpen] = useState(!preferences.onboardingCompleted);
 
   return (
-    <div className="min-h-screen bg-[#fcfcfd] text-neutral-900 flex">
+    <div className="min-h-screen bg-[#fbfbfc] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex transition-colors duration-200">
       {/* Sidebar navigation */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -22,7 +22,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">{children}</main>
       </div>
 
-      {/* 7-Step Onboarding Wizard Modal */}
+      {/* Onboarding Wizard Modal */}
       <OnboardingWizard isOpen={wizardOpen} onClose={() => setWizardOpen(false)} />
     </div>
   );

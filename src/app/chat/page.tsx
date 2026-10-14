@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/storage/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChatMessage } from '@/types';
+import { ChatMessage, ChatMessageAction, ContentPillar } from '@/types';
 import {
   MessageSquare,
   Sparkles,
@@ -13,35 +13,46 @@ import {
   Lightbulb,
   FileEdit,
   Calendar,
-  FlaskConical,
   Copy,
   Check,
-  Cpu,
   Bot,
   User,
   Trash2,
+  BookOpen,
 } from 'lucide-react';
 
 const SUGGESTED_PROMPTS = [
-  'What should I post tomorrow based on my save metrics?',
-  'Which of my recent posts performed best and why?',
-  'Give me 4 contrarian content ideas for my niche',
-  'Plan my next 7 days of posting',
-  'Which experiment should I run next?',
+  'What should I shoot today based on my backlog and bandwidth?',
+  'Find 3 content ideas about website sales and cold calling',
+  'Turn my saved Crawl4AI research into a short-form video script',
+  'What lessons can I draw from my recent manual growth snapshots?',
+  'Help me plan a 5-point local SEO carousel for small businesses',
 ];
+
+const makeTimestamp = () => new Date().toISOString();
+const makeId = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
 
 export default function AIChatPage() {
   const router = useRouter();
-  const { account, posts, preferences, styleProfile, experiments, addIdea, addCalendarEntry, aiConfig } = useApp();
+  const {
+    ideas,
+    scripts,
+    snapshots,
+    research,
+    reports,
+    competitors,
+    preferences,
+    styleProfile,
+    aiConfig,
+    addIdea,
+  } = useApp();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: 'msg_welcome',
       role: 'assistant',
-      content: `Hello! I am your AI Instagram Content Strategist. I have authorized access to your **@${
-        account.username || 'creator'
-      }** telemetry (${account.followersCount.toLocaleString()} followers, 5.2% baseline ER).\n\nYou can ask me to analyze past post retention, write scripts in your voice, suggest high-saving ideas, or plan your schedule. How can I help you today?`,
-      timestamp: '2026-10-14T12:00:00Z',
+      content: `Hello! I am your AI Content Strategist. I have access to your AI Creator OS knowledge base:\n- Content Ideas & Scripts\n- Verified Research Findings\n- Reports & Notes\n- Manual Growth Snapshots\n\nAsk me anything about planning today's shoot, turning research into scripts, reviewing cold calling hooks, or analyzing your growth patterns!`,
+      timestamp: '2026-10-14T12:00:00.000Z',
     },
   ]);
 
@@ -59,10 +70,10 @@ export default function AIChatPage() {
     if (!text.trim() || isLoading) return;
 
     const userMsg: ChatMessage = {
-      id: `user_${Date.now()}`,
+      id: makeId('user'),
       role: 'user',
       content: text.trim(),
-      timestamp: new Date().toISOString(),
+      timestamp: makeTimestamp(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -77,11 +88,14 @@ export default function AIChatPage() {
           message: text,
           history: messages,
           contextData: {
-            account,
+            ideas,
+            scripts,
+            snapshots,
+            research,
+            reports,
+            competitors,
             preferences,
-            posts: posts.slice(0, 5),
             styleProfile,
-            experiments,
           },
           aiConfig,
         }),
@@ -89,20 +103,22 @@ export default function AIChatPage() {
 
       const data = await res.json();
       const assistantMsg: ChatMessage = {
-        id: `assistant_${Date.now()}`,
+        id: makeId('assistant'),
         role: 'assistant',
-        content: data.content || 'I processed your request with your creator telemetry.',
-        timestamp: new Date().toISOString(),
+        content: data.content || 'Processed your strategy query.',
+        timestamp: makeTimestamp(),
+        suggestedActions: data.suggestedActions || [],
       };
       setMessages((prev) => [...prev, assistantMsg]);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const err = e as Error;
       setMessages((prev) => [
         ...prev,
         {
-          id: `assistant_err_${Date.now()}`,
+          id: makeId('assistant_err'),
           role: 'assistant',
-          content: 'Could not complete the query. Please verify your AI provider endpoint in Settings.',
-          timestamp: new Date().toISOString(),
+          content: `Could not reach AI provider (${err.message}). If using Ollama, verify that 'ollama serve' is active.`,
+          timestamp: makeTimestamp(),
         },
       ]);
     } finally {
@@ -110,150 +126,165 @@ export default function AIChatPage() {
     }
   };
 
-  const handleCopy = (id: string, text: string) => {
+  const handleCopyMessage = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleConvertIdea = (content: string) => {
-    addIdea({
-      title: 'Strategy Note Idea',
-      description: content.slice(0, 200),
-      topic: preferences.niche,
-      format: 'REELS',
-      targetAudience: preferences.targetAudience,
-      hook: content.split('\n')[0] || 'Insightful opening hook',
-      objective: 'Authority',
-      estimatedFilmingMinutes: 30,
-      difficulty: 'Medium',
-      source: 'AI Recommendation',
-      status: 'idea',
-    });
-    router.push('/ideas');
+  const handleExecuteAction = (action: ChatMessageAction) => {
+    if (action.type === 'create_idea') {
+      const data = action.data as {
+        title?: string;
+        pillar?: ContentPillar;
+        topic?: string;
+        format?: string;
+        hook?: string;
+      };
+      addIdea({
+        title: data.title || 'New Idea from Chat',
+        pillar: data.pillar || 'AI_TOOLS_AND_AUTOMATION',
+        topic: data.topic || data.title || 'Content Workflow',
+        targetAudience: preferences.targetAudience,
+        format: 'REELS',
+        hook: data.hook || 'Opening hook from chat discussion.',
+        mainAngle: 'Generated from AI Chat exploration.',
+        estimatedProductionTime: 30,
+        priority: 'High',
+        status: 'Inbox',
+        isAiGenerated: true,
+      });
+      router.push('/ideas');
+    } else if (action.type === 'generate_script') {
+      router.push('/scripts');
+    } else if (action.type === 'add_calendar') {
+      router.push('/calendar');
+    }
   };
 
-  const handleConvertCalendar = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
-    addCalendarEntry({
-      title: 'AI Scheduled Strategy Post',
-      plannedDate: d.toISOString().split('T')[0],
-      format: 'REELS',
-      status: 'planned',
-      objective: 'Authority',
-      notes: 'Scheduled directly from AI Chat conversation.',
-    });
-    router.push('/calendar');
+  const handleClearHistory = () => {
+    setMessages([
+      {
+        id: makeId('msg_welcome'),
+        role: 'assistant',
+        content: 'Conversation history cleared. How can I assist your content strategy today?',
+        timestamp: makeTimestamp(),
+      },
+    ]);
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-4xl mx-auto space-y-4">
+    <div className="space-y-6 pb-12 flex flex-col h-[calc(100vh-7rem)]">
       {/* Top Banner */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-4 shadow-xs flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-neutral-900 text-white flex items-center justify-center font-bold text-xs">
-            <Sparkles className="w-4 h-4 text-amber-300" />
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-5 shadow-xs flex items-center justify-between gap-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-700 dark:text-purple-300">
+            <MessageSquare className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-neutral-900">AI Strategist Assistant</h2>
-            <div className="text-[11px] text-neutral-400">
-              Active Context: @{account.username} • {aiConfig.provider} ({aiConfig.textModel})
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
+                AI Content Strategist Chat
+              </h2>
+              <Badge variant="purple" className="text-[10px] font-mono">
+                Knowledge-Aware
+              </Badge>
             </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Answers strictly using your verified saved records, manual growth metrics, and 6 content pillars.
+            </p>
           </div>
         </div>
 
-        <button
-          onClick={() =>
-            setMessages([
-              {
-                id: 'welcome',
-                role: 'assistant',
-                content: 'Chat context cleared. How can I assist your strategy next?',
-                timestamp: new Date().toISOString(),
-              },
-            ])
-          }
-          className="p-1.5 text-neutral-400 hover:text-neutral-600 rounded-lg"
-          title="Clear chat history"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <Button onClick={handleClearHistory} variant="outline" size="sm" className="text-xs h-8">
+          <Trash2 className="w-3.5 h-3.5 mr-1 text-neutral-400" />
+          Clear Chat
+        </Button>
       </div>
 
-      {/* Messages Scroll Container */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex items-start gap-3 text-xs leading-relaxed ${
-              msg.role === 'user' ? 'justify-end' : 'justify-start'
-            }`}
+      {/* Suggested Prompts Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs shrink-0">
+        <span className="text-[11px] font-semibold text-neutral-400 whitespace-nowrap">Suggested:</span>
+        {SUGGESTED_PROMPTS.map((prompt, idx) => (
+          <button
+            key={idx}
+            onClick={() => handleSendMessage(prompt)}
+            className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-850 whitespace-nowrap cursor-pointer transition-colors text-[11px]"
           >
-            {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                <Bot className="w-4 h-4" />
-              </div>
-            )}
-
-            <div
-              className={`max-w-2xl rounded-2xl p-4 shadow-2xs space-y-2 ${
-                msg.role === 'user'
-                  ? 'bg-neutral-900 text-white font-medium rounded-tr-xs'
-                  : 'bg-white border border-neutral-200/90 text-neutral-800 rounded-tl-xs'
-              }`}
-            >
-              <div className="whitespace-pre-line">{msg.content}</div>
-
-              {/* Action Conversion Toolbar on Assistant Messages */}
-              {msg.role === 'assistant' && msg.id !== 'msg_welcome' && (
-                <div className="pt-2 mt-2 border-t border-neutral-100 flex flex-wrap items-center gap-1.5 text-[11px]">
-                  <button
-                    onClick={() => handleCopy(msg.id, msg.content)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
-                  >
-                    {copiedId === msg.id ? (
-                      <Check className="w-3 h-3 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3 h-3" />
-                    )}
-                    <span>{copiedId === msg.id ? 'Copied' : 'Copy'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleConvertIdea(msg.content)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 font-medium"
-                  >
-                    <Lightbulb className="w-3 h-3 text-amber-500" />
-                    Save as Idea
-                  </button>
-
-                  <button
-                    onClick={handleConvertCalendar}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 font-medium"
-                  >
-                    <Calendar className="w-3 h-3 text-blue-500" />
-                    Add to Calendar
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {msg.role === 'user' && (
-              <div className="w-7 h-7 rounded-lg bg-neutral-200 text-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
-                <User className="w-4 h-4" />
-              </div>
-            )}
-          </div>
+            {prompt}
+          </button>
         ))}
+      </div>
+
+      {/* Chat Messages Scroll Container */}
+      <div className="flex-1 overflow-y-auto space-y-4 p-4 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 shadow-xs">
+        {messages.map((msg) => {
+          const isUser = msg.role === 'user';
+
+          return (
+            <div key={msg.id} className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                  isUser
+                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+                    : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
+                }`}
+              >
+                {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+              </div>
+
+              <div className={`space-y-2 max-w-2xl ${isUser ? 'items-end' : 'items-start'}`}>
+                <div
+                  className={`p-4 rounded-2xl text-xs leading-relaxed ${
+                    isUser
+                      ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950 font-medium'
+                      : 'bg-neutral-50 dark:bg-neutral-850 border border-neutral-200/80 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200'
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                </div>
+
+                {/* Suggested Actions if returned by AI */}
+                {msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    {msg.suggestedActions.map((action, i) => (
+                      <Button
+                        key={i}
+                        onClick={() => handleExecuteAction(action)}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-7 px-2.5 bg-white dark:bg-neutral-900 shadow-2xs font-semibold"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1 text-purple-600" />
+                        {action.label}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                <div className={`flex items-center gap-2 text-[10px] text-neutral-400 px-1 ${isUser ? 'justify-end' : ''}`}>
+                  <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {!isUser && (
+                    <button
+                      onClick={() => handleCopyMessage(msg.id, msg.content)}
+                      className="hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer"
+                    >
+                      {copiedId === msg.id ? 'Copied' : 'Copy'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
 
         {isLoading && (
-          <div className="flex items-start gap-3 text-xs">
-            <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center shrink-0 animate-pulse">
-              <Bot className="w-4 h-4" />
+          <div className="flex items-center gap-3 text-xs text-neutral-500">
+            <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 flex items-center justify-center">
+              <Bot className="w-4 h-4 animate-spin" />
             </div>
-            <div className="p-3 bg-white border border-neutral-200 rounded-2xl rounded-tl-xs text-neutral-400 italic">
-              Analyzing creator telemetry & synthesizing strategy...
+            <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-850 border border-neutral-200 dark:border-neutral-800 text-neutral-400 animate-pulse">
+              Consulting your saved research and content strategy...
             </div>
           </div>
         )}
@@ -261,44 +292,34 @@ export default function AIChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggested Quick Prompts */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 shrink-0 text-[11px]">
-        {SUGGESTED_PROMPTS.map((prompt, i) => (
-          <button
-            key={i}
-            onClick={() => handleSendMessage(prompt)}
-            className="px-2.5 py-1 rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-100 shrink-0 transition-colors"
-          >
-            {prompt}
-          </button>
-        ))}
-      </div>
-
       {/* Input bar */}
-      <div className="bg-white border border-neutral-200/90 rounded-2xl p-2 shadow-xs shrink-0 flex items-center gap-2">
-        <textarea
-          rows={1}
-          placeholder="Ask a question about your content strategy, metrics, or scripts..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
+      <div className="shrink-0">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
           }}
-          className="flex-1 px-3 py-1.5 text-xs text-neutral-900 focus:outline-none resize-none max-h-24"
-        />
-
-        <Button
-          onClick={() => handleSendMessage()}
-          variant="primary"
-          size="sm"
-          disabled={!input.trim() || isLoading}
-          className="text-xs h-8 px-3 bg-neutral-900 hover:bg-neutral-800"
+          className="flex items-center gap-2 p-1.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs focus-within:ring-1 focus-within:ring-neutral-400"
         >
-          <Send className="w-3.5 h-3.5" />
-        </Button>
+          <input
+            type="text"
+            placeholder="Ask anything about your content pillars, ideas, or cold calling scripts..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 text-xs bg-transparent text-neutral-900 dark:text-neutral-100 focus:outline-none"
+          />
+          <Button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            variant="primary"
+            size="sm"
+            className="h-9 px-4 shrink-0 rounded-xl"
+          >
+            <Send className="w-3.5 h-3.5 mr-1" />
+            Send
+          </Button>
+        </form>
       </div>
     </div>
   );

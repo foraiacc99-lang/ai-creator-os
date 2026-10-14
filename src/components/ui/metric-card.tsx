@@ -6,7 +6,7 @@ export interface MetricCardProps {
   label: string;
   value: string | number;
   change?: number; // e.g. +14.2%
-  changePeriod?: string; // e.g. "vs last 7 days"
+  changePeriod?: string;
   subtitle?: string;
   icon?: React.ReactNode;
   className?: string;
@@ -16,7 +16,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   label,
   value,
   change,
-  changePeriod = 'vs previous period',
+  changePeriod = 'vs previous snapshot',
   subtitle,
   icon,
   className,
@@ -27,28 +27,28 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <div
       className={cn(
-        'bg-white border border-neutral-200/90 rounded-xl p-5 shadow-xs hover:border-neutral-300 transition-all flex flex-col justify-between',
+        'bg-white border border-neutral-200/90 dark:bg-neutral-900/80 dark:border-neutral-800 rounded-xl p-5 shadow-xs hover:border-neutral-300 dark:hover:border-neutral-700 transition-all flex flex-col justify-between',
         className
       )}
     >
-      <div className="flex items-center justify-between text-neutral-500 mb-2">
-        <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">{label}</span>
-        {icon && <div className="text-neutral-400">{icon}</div>}
+      <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
+        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{label}</span>
+        {icon && <div className="text-neutral-400 dark:text-neutral-500">{icon}</div>}
       </div>
 
       <div className="flex items-baseline gap-2 mt-1">
-        <span className="text-2xl font-bold tracking-tight text-neutral-900">{value}</span>
+        <span className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">{value}</span>
       </div>
 
       {(change !== undefined || subtitle) && (
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-neutral-500">
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
           {change !== undefined && (
             <span
               className={cn(
                 'inline-flex items-center gap-0.5 font-semibold px-1.5 py-0.5 rounded text-[11px]',
-                isPositive && 'bg-emerald-50 text-emerald-700',
-                isNegative && 'bg-rose-50 text-rose-700',
-                !isPositive && !isNegative && 'bg-neutral-100 text-neutral-600'
+                isPositive && 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+                isNegative && 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300',
+                !isPositive && !isNegative && 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
               )}
             >
               {isPositive && <TrendingUp className="w-3 h-3" />}
@@ -57,7 +57,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
               {isPositive ? `+${change}%` : `${change}%`}
             </span>
           )}
-          <span className="text-neutral-400 truncate">{subtitle || changePeriod}</span>
+          <span className="text-neutral-400 dark:text-neutral-500 truncate">{subtitle || changePeriod}</span>
         </div>
       )}
     </div>
