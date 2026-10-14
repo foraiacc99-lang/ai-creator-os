@@ -73,9 +73,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         {/* Brand header */}
         <div className="h-16 px-5 border-b border-neutral-200/80 dark:border-neutral-800 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center font-bold text-xs shadow-xs">
-              OS
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-lg overflow-hidden shadow-xs border border-neutral-200/60 dark:border-neutral-800 shrink-0 bg-[#2f374a] flex items-center justify-center transition-transform group-hover:scale-105">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="AI Creator OS Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <div className="text-sm font-bold tracking-tight text-neutral-900 dark:text-neutral-100">

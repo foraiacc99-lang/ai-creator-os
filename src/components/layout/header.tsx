@@ -57,6 +57,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <Menu className="w-5 h-5" />
         </button>
 
+        {/* Mobile brand logo */}
+        <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 border border-neutral-200/60 dark:border-neutral-800 bg-[#2f374a] lg:hidden flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="AI Creator OS Logo" className="w-full h-full object-cover" />
+        </div>
+
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-base font-bold text-neutral-900 dark:text-neutral-100 tracking-tight leading-none">
