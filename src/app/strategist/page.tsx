@@ -24,6 +24,7 @@ import {
   ChevronUp,
   Plus,
   Video,
+  BookOpen,
 } from 'lucide-react';
 
 export default function StrategistPage() {
@@ -33,6 +34,8 @@ export default function StrategistPage() {
     updateRecommendationStatus,
     convertRecommendationToIdea,
     createScriptFromIdea,
+    createCarouselFromIdea,
+    createStoryFromIdea,
     addCalendarEntry,
     calendar,
     preferences,
@@ -56,6 +59,18 @@ export default function StrategistPage() {
     const idea = convertRecommendationToIdea(rec);
     createScriptFromIdea(idea);
     router.push('/scripts');
+  };
+
+  const handleCreateCarousel = (rec: AIRecommendation) => {
+    const idea = convertRecommendationToIdea(rec);
+    const newProj = createCarouselFromIdea(idea);
+    router.push(`/carousel?id=${newProj.id}&tab=carousel`);
+  };
+
+  const handleCreateStory = (rec: AIRecommendation) => {
+    const idea = convertRecommendationToIdea(rec);
+    const newStory = createStoryFromIdea(idea);
+    router.push(`/carousel?id=${newStory.id}&tab=stories`);
   };
 
   const handleSaveToIdeas = (rec: AIRecommendation) => {
@@ -218,15 +233,40 @@ export default function StrategistPage() {
 
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      onClick={() => handleGenerateScript(rec)}
-                      variant="primary"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      <Video className="w-3.5 h-3.5 mr-1" />
-                      Script Studio
-                    </Button>
+                    {rec.recommendedFormat === 'CAROUSEL' ? (
+                      <Button
+                        onClick={() => handleCreateCarousel(rec)}
+                        variant="primary"
+                        size="sm"
+                        className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shadow-xs"
+                        title="Open & build in Carousel Studio"
+                      >
+                        <Layers className="w-3.5 h-3.5 mr-1" />
+                        Carousel Studio
+                      </Button>
+                    ) : rec.recommendedFormat === 'STORY' ? (
+                      <Button
+                        onClick={() => handleCreateStory(rec)}
+                        variant="primary"
+                        size="sm"
+                        className="text-xs bg-pink-600 hover:bg-pink-700 text-white font-semibold cursor-pointer shadow-xs"
+                        title="Open & plan in Stories Studio"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 mr-1" />
+                        Stories Studio
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleGenerateScript(rec)}
+                        variant="primary"
+                        size="sm"
+                        className="text-xs"
+                        title="Open & draft in Script Studio"
+                      >
+                        <Video className="w-3.5 h-3.5 mr-1" />
+                        Script Studio
+                      </Button>
+                    )}
                     <Button
                       onClick={() => handleSaveToIdeas(rec)}
                       variant="outline"

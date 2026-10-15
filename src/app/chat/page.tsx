@@ -45,6 +45,8 @@ export default function AIChatPage() {
     styleProfile,
     aiConfig,
     addIdea,
+    createCarouselFromIdea,
+    createStoryFromIdea,
   } = useApp();
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
@@ -141,12 +143,13 @@ export default function AIChatPage() {
         format?: string;
         hook?: string;
       };
-      addIdea({
+      const chosenFormat = (data.format?.toUpperCase() || 'REELS') as 'REELS' | 'CAROUSEL' | 'STORY';
+      const newIdea = addIdea({
         title: data.title || 'New Idea from Chat',
         pillar: data.pillar || 'AI_TOOLS_AND_AUTOMATION',
         topic: data.topic || data.title || 'Content Workflow',
         targetAudience: preferences.targetAudience,
-        format: 'REELS',
+        format: chosenFormat,
         hook: data.hook || 'Opening hook from chat discussion.',
         mainAngle: 'Generated from AI Chat exploration.',
         estimatedProductionTime: 30,
@@ -154,7 +157,16 @@ export default function AIChatPage() {
         status: 'Inbox',
         isAiGenerated: true,
       });
-      router.push('/ideas');
+
+      if (chosenFormat === 'CAROUSEL') {
+        const newProj = createCarouselFromIdea(newIdea);
+        router.push(`/carousel?id=${newProj.id}&tab=carousel`);
+      } else if (chosenFormat === 'STORY') {
+        const newStory = createStoryFromIdea(newIdea);
+        router.push(`/carousel?id=${newStory.id}&tab=stories`);
+      } else {
+        router.push('/ideas');
+      }
     } else if (action.type === 'generate_script') {
       router.push('/scripts');
     } else if (action.type === 'add_calendar') {

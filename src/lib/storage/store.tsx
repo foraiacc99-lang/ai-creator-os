@@ -77,6 +77,8 @@ interface AppContextType {
   archiveIdea: (id: string) => void;
   duplicateIdea: (id: string) => ContentIdea | undefined;
   createScriptFromIdea: (idea: ContentIdea) => ScriptItem;
+  createCarouselFromIdea: (idea: ContentIdea) => CarouselProject;
+  createStoryFromIdea: (idea: ContentIdea) => StorySequence;
 
   // Scripts
   addScript: (script: Omit<ScriptItem, 'id' | 'version' | 'createdAt' | 'updatedAt'>) => ScriptItem;
@@ -374,7 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addIdea = (ideaData: Omit<ContentIdea, 'id' | 'createdAt' | 'updatedAt'>): ContentIdea => {
     const newIdea: ContentIdea = {
       ...ideaData,
-      id: `idea_${Date.now()}`,
+      id: `idea_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -493,6 +495,144 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     return newScript;
+  };
+
+  const createCarouselFromIdea = (idea: ContentIdea): CarouselProject => {
+    const existing = carousels.find(
+      (c) => (idea.relatedCarouselIds && idea.relatedCarouselIds.includes(c.id)) || c.title === idea.title
+    );
+    if (existing) {
+      return existing;
+    }
+
+    const cleanTopic = idea.topic || idea.title;
+    const hook = idea.hook || `Stop doing ${cleanTopic} the hard way.`;
+
+    const newProj: CarouselProject = {
+      id: `car_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: idea.title,
+      pillar: idea.pillar,
+      intendedAudience: idea.targetAudience || 'Developers, builders, and technical creators',
+      coverSlide: {
+        headline: hook,
+        subtitle: idea.mainAngle || `A practical, fluff-free breakdown of ${cleanTopic}.`,
+        visualNotes: 'Dark card with high-contrast badge, clean typography, and swipe indicator.',
+      },
+      slides: [
+        {
+          slideNumber: 1,
+          headline: `1. The Real Bottleneck in ${cleanTopic}`,
+          body: `Most builders tackle ${cleanTopic} by treating surface symptoms rather than the root architecture. They spend hours guessing and debugging.`,
+          visualDirection: 'Split graphic: Fragile makeshift setup vs. robust standardized pipeline.',
+          supportingExample: 'Over 80% of edge-case bugs stem from unvalidated inputs or premature complexity.',
+        },
+        {
+          slideNumber: 2,
+          headline: `2. The Non-Obvious Architecture Angle`,
+          body: idea.mainAngle || `Standardize your core data models and requirements before touching any tools. Isolate repetitive manual friction with local scripts.`,
+          visualDirection: 'System architecture diagram with clear data boundaries.',
+          supportingExample: 'Standardizing inputs saves 10x more debugging time than premature optimization.',
+        },
+        {
+          slideNumber: 3,
+          headline: `3. Step-by-Step Implementation`,
+          body: `Step 1: Standardize input data contracts.\nStep 2: Automate friction with self-contained scripts.\nStep 3: Measure execution latency and double down on proven outcomes.`,
+          visualDirection: 'Terminal screenshot running local verification benchmark.',
+          supportingExample: 'Grounded in observable code behavior with zero external black-box dependencies.',
+        },
+        {
+          slideNumber: 4,
+          headline: `4. Production Takeaway`,
+          body: `Stop relying on fragile workarounds. Own your core logic and test execution speed regularly.`,
+          visualDirection: 'Summary checklist card with verified takeaways.',
+          supportingExample: idea.supportingResearch || 'Documented engineering principles and local reproducibility.',
+        },
+      ],
+      finalTakeaway: idea.supportingResearch || `Mastering ${cleanTopic} comes down to standardizing your system instead of guessing.`,
+      callToAction: `Save this carousel for your next build sprint and comment below!`,
+      caption: `${idea.title}\n\n${hook}\n\nSwipe through for the complete breakdown. 📌\n\nSave this for your next sprint! 🚀\n\n#buildinpublic #creatoros #solodev`,
+      researchReferences: idea.supportingResearch ? [idea.supportingResearch] : ['Tested benchmarks & production workflows'],
+      status: 'draft',
+      updatedAt: new Date().toISOString(),
+    };
+
+    setCarousels((prev) => {
+      const next = [newProj, ...prev];
+      writeStorage(STORAGE_KEYS.CAROUSELS, next);
+      return next;
+    });
+
+    updateIdea(idea.id, {
+      status: 'Ready to Publish',
+      relatedCarouselIds: [...(idea.relatedCarouselIds || []), newProj.id],
+    });
+
+    return newProj;
+  };
+
+  const createStoryFromIdea = (idea: ContentIdea): StorySequence => {
+    const existing = stories.find(
+      (s) => (idea.relatedStoryIds && idea.relatedStoryIds.includes(s.id)) || s.title === idea.title
+    );
+    if (existing) {
+      return existing;
+    }
+
+    const cleanTopic = idea.topic || idea.title;
+    const hook = idea.hook || `Quick update on what I am building today with ${cleanTopic}.`;
+
+    const newStory: StorySequence = {
+      id: `story_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: idea.title,
+      objective: 'bts',
+      frames: [
+        {
+          frameNumber: 1,
+          type: 'talking_head',
+          content: hook,
+          stickerText: 'Daily Build ⚡',
+        },
+        {
+          frameNumber: 2,
+          type: 'bts',
+          content: `Here is the realistic setup for ${cleanTopic}: ${idea.mainAngle || 'Standardizing the architecture without brittle dependencies.'}`,
+          stickerText: 'Behind The Scenes 🛠️',
+        },
+        {
+          frameNumber: 3,
+          type: 'poll',
+          content: `When dealing with ${cleanTopic}, what is your biggest challenge? Finding reliable tools OR setting up the initial pipeline?`,
+          stickerText: 'Poll: Tools vs Pipeline',
+        },
+        {
+          frameNumber: 4,
+          type: 'question_box',
+          content: `Have questions about how this works under the hood? Drop your thoughts below and I will break it down.`,
+          stickerText: 'Q&A: Ask Anything 💬',
+        },
+        {
+          frameNumber: 5,
+          type: 'link',
+          content: `Read the full breakdown and grab the reference notes here.`,
+          stickerText: 'View Resources 🔗',
+        },
+      ],
+      ctaLink: idea.sourceUrls?.[0] || 'https://github.com',
+      updatedAt: new Date().toISOString(),
+    };
+
+    setStories((prev) => {
+      const next = [newStory, ...prev];
+      writeStorage(STORAGE_KEYS.STORIES, next);
+      return next;
+    });
+
+    updateIdea(idea.id, {
+      status: 'Ready to Publish',
+      relatedStoryIds: [...(idea.relatedStoryIds || []), newStory.id],
+    });
+
+    return newStory;
   };
 
   // Scripts
@@ -855,7 +995,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ): CarouselProject => {
     const newProj: CarouselProject = {
       ...data,
-      id: `car_${Date.now()}`,
+      id: `car_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       updatedAt: new Date().toISOString(),
     };
     setCarousels((prev) => {
@@ -890,7 +1030,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ): StorySequence => {
     const newStory: StorySequence = {
       ...data,
-      id: `story_${Date.now()}`,
+      id: `story_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       updatedAt: new Date().toISOString(),
     };
     setStories((prev) => {
@@ -1198,6 +1338,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         archiveIdea,
         duplicateIdea,
         createScriptFromIdea,
+        createCarouselFromIdea,
+        createStoryFromIdea,
         addScript,
         updateScript,
         deleteScript,

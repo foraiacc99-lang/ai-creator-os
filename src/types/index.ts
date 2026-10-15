@@ -116,6 +116,8 @@ export interface ContentIdea {
   createdAt: string;
   updatedAt: string;
   relatedScriptIds?: string[];
+  relatedCarouselIds?: string[];
+  relatedStoryIds?: string[];
   relatedResearchIds?: string[];
   tags?: string[];
   isFavorite?: boolean;

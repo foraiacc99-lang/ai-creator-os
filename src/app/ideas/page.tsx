@@ -27,6 +27,8 @@ import {
   Bot,
   User,
   CheckCircle2,
+  Layers,
+  BookOpen,
 } from 'lucide-react';
 
 const STATUS_OPTIONS: IdeaStatus[] = [
@@ -51,6 +53,10 @@ export default function IdeasPage() {
     deleteIdea,
     duplicateIdea,
     createScriptFromIdea,
+    createCarouselFromIdea,
+    createStoryFromIdea,
+    carousels,
+    stories,
     addCalendarEntry,
     calendar,
     checkDuplicateIdea,
@@ -69,6 +75,7 @@ export default function IdeasPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [autoAddToStudio, setAutoAddToStudio] = useState(true);
 
   // Manual Form State
   const [title, setTitle] = useState('');
@@ -99,7 +106,7 @@ export default function IdeasPage() {
     return matchesSearch && matchesPillar && matchesStatus && matchesPriority;
   });
 
-  const handleCreateIdea = (e: React.FormEvent) => {
+  const handleCreateIdea = (e: React.FormEvent, openInStudio: boolean = false) => {
     e.preventDefault();
     if (!title.trim()) return;
 
@@ -110,7 +117,7 @@ export default function IdeasPage() {
       return;
     }
 
-    addIdea({
+    const savedIdea = addIdea({
       title: title.trim(),
       pillar,
       topic: topic || title,
@@ -125,14 +132,34 @@ export default function IdeasPage() {
       isAiGenerated: false,
     });
 
-    setToastMessage(`Added new idea: "${title.trim()}"`);
+    let studioTarget = '';
+    if (format === 'CAROUSEL' && autoAddToStudio) {
+      const newProj = createCarouselFromIdea(savedIdea);
+      studioTarget = `/carousel?id=${newProj.id}&tab=carousel`;
+      setToastMessage(`Added idea and automatically created in Carousel Studio!`);
+    } else if (format === 'STORY' && autoAddToStudio) {
+      const newStory = createStoryFromIdea(savedIdea);
+      studioTarget = `/carousel?id=${newStory.id}&tab=stories`;
+      setToastMessage(`Added idea and automatically created in Stories Studio!`);
+    } else if (format === 'REELS' && openInStudio) {
+      const newScript = createScriptFromIdea(savedIdea);
+      studioTarget = '/scripts';
+      setToastMessage(`Added idea and initialized video script!`);
+    } else {
+      setToastMessage(`Added new idea: "${title.trim()}"`);
+    }
+
     setTimeout(() => setToastMessage(null), 3500);
     setCreateModalOpen(false);
     resetForm();
+
+    if (openInStudio && studioTarget) {
+      router.push(studioTarget);
+    }
   };
 
-  const handleForceSaveDuplicate = () => {
-    addIdea({
+  const handleForceSaveDuplicate = (openInStudio: boolean = false) => {
+    const savedIdea = addIdea({
       title: title.trim(),
       pillar,
       topic: topic || title,
@@ -146,11 +173,28 @@ export default function IdeasPage() {
       status: 'Inbox',
       isAiGenerated: false,
     });
-    setToastMessage(`Saved idea: "${title.trim()}"`);
+
+    let studioTarget = '';
+    if (format === 'CAROUSEL' && autoAddToStudio) {
+      const newProj = createCarouselFromIdea(savedIdea);
+      studioTarget = `/carousel?id=${newProj.id}&tab=carousel`;
+      setToastMessage(`Saved idea & created project in Carousel Studio!`);
+    } else if (format === 'STORY' && autoAddToStudio) {
+      const newStory = createStoryFromIdea(savedIdea);
+      studioTarget = `/carousel?id=${newStory.id}&tab=stories`;
+      setToastMessage(`Saved idea & created sequence in Stories Studio!`);
+    } else {
+      setToastMessage(`Saved idea: "${title.trim()}"`);
+    }
+
     setTimeout(() => setToastMessage(null), 3500);
     setDuplicateWarning(null);
     setCreateModalOpen(false);
     resetForm();
+
+    if (openInStudio && studioTarget) {
+      router.push(studioTarget);
+    }
   };
 
   const resetForm = () => {
@@ -189,15 +233,31 @@ export default function IdeasPage() {
             ? `${item.title || 'Practical Workflow'} (Angle ${idx + 1})`
             : (item.title || `Content Idea #${idx + 1}`);
 
-          addIdea({
+          const newIdea = addIdea({
             ...(item as Omit<ContentIdea, 'id' | 'createdAt' | 'updatedAt'>),
             title: finalTitle,
+            format: genFormat,
             isAiGenerated: true,
           });
+
+          // Automatically add into the respective studio when Carousel or Story is chosen!
+          if (genFormat === 'CAROUSEL') {
+            createCarouselFromIdea(newIdea);
+          } else if (genFormat === 'STORY') {
+            createStoryFromIdea(newIdea);
+          }
+
           addedCount++;
         });
+
         setGenerateModalOpen(false);
-        setToastMessage(`Successfully generated ${addedCount} new ideas into your library!`);
+        if (genFormat === 'CAROUSEL') {
+          setToastMessage(`Generated ${addedCount} ideas and automatically added them to Carousel Studio!`);
+        } else if (genFormat === 'STORY') {
+          setToastMessage(`Generated ${addedCount} ideas and automatically added them to Stories Studio!`);
+        } else {
+          setToastMessage(`Successfully generated ${addedCount} new ideas into your library!`);
+        }
         setTimeout(() => setToastMessage(null), 4000);
       } else {
         setToastMessage('Idea generation completed. Check filters if not immediately visible.');
@@ -215,6 +275,30 @@ export default function IdeasPage() {
   const handleScriptIdea = (idea: ContentIdea) => {
     createScriptFromIdea(idea);
     router.push('/scripts');
+  };
+
+  const handleCarouselIdea = (idea: ContentIdea) => {
+    const existing = carousels.find(
+      (c) => (idea.relatedCarouselIds && idea.relatedCarouselIds.includes(c.id)) || c.title === idea.title
+    );
+    if (existing) {
+      router.push(`/carousel?id=${existing.id}&tab=carousel`);
+    } else {
+      const newCarousel = createCarouselFromIdea(idea);
+      router.push(`/carousel?id=${newCarousel.id}&tab=carousel`);
+    }
+  };
+
+  const handleStoryIdea = (idea: ContentIdea) => {
+    const existing = stories.find(
+      (s) => (idea.relatedStoryIds && idea.relatedStoryIds.includes(s.id)) || s.title === idea.title
+    );
+    if (existing) {
+      router.push(`/carousel?id=${existing.id}&tab=stories`);
+    } else {
+      const newStory = createStoryFromIdea(idea);
+      router.push(`/carousel?id=${newStory.id}&tab=stories`);
+    }
   };
 
   const handleScheduleIdea = (idea: ContentIdea) => {
@@ -450,16 +534,40 @@ export default function IdeasPage() {
                 </select>
 
                 <div className="flex items-center gap-1">
-                  <Button
-                    onClick={() => handleScriptIdea(idea)}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-7 px-2"
-                    title="Write Script"
-                  >
-                    <FileEdit className="w-3 h-3 mr-1 text-purple-600" />
-                    Script
-                  </Button>
+                  {idea.format === 'CAROUSEL' ? (
+                    <Button
+                      onClick={() => handleCarouselIdea(idea)}
+                      variant="primary"
+                      size="sm"
+                      className="text-xs h-7 px-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shadow-xs"
+                      title="Open & build in Carousel Studio"
+                    >
+                      <Layers className="w-3 h-3 mr-1" />
+                      Carousel Studio
+                    </Button>
+                  ) : idea.format === 'STORY' ? (
+                    <Button
+                      onClick={() => handleStoryIdea(idea)}
+                      variant="primary"
+                      size="sm"
+                      className="text-xs h-7 px-2.5 bg-pink-600 hover:bg-pink-700 text-white font-semibold cursor-pointer shadow-xs"
+                      title="Open & plan in Stories Studio"
+                    >
+                      <BookOpen className="w-3 h-3 mr-1" />
+                      Stories Studio
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleScriptIdea(idea)}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7 px-2 cursor-pointer"
+                      title="Write Script"
+                    >
+                      <FileEdit className="w-3 h-3 mr-1 text-purple-600" />
+                      Script
+                    </Button>
+                  )}
 
                   <Button
                     onClick={() => handleScheduleIdea(idea)}
@@ -538,7 +646,7 @@ export default function IdeasPage() {
                 <p className="text-amber-700 dark:text-amber-300">{duplicateWarning}</p>
                 <div className="flex items-center gap-2 pt-1">
                   <Button
-                    onClick={handleForceSaveDuplicate}
+                    onClick={() => handleForceSaveDuplicate(false)}
                     variant="outline"
                     size="sm"
                     className="text-xs"
@@ -606,6 +714,49 @@ export default function IdeasPage() {
                 </div>
               </div>
 
+              {/* Studio Integration Info for Carousel & Story */}
+              {format === 'CAROUSEL' && (
+                <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 text-xs text-blue-900 dark:text-blue-200 space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>Carousel & Stories Studio Integration</span>
+                  </div>
+                  <p className="text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed">
+                    A multi-slide deck with cover hook, problem analysis, architecture breakdown, and action CTA will be automatically created in your Carousel & Stories Studio.
+                  </p>
+                  <label className="flex items-center gap-2 pt-1 font-semibold cursor-pointer text-[11px]">
+                    <input
+                      type="checkbox"
+                      checked={autoAddToStudio}
+                      onChange={(e) => setAutoAddToStudio(e.target.checked)}
+                      className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span>Automatically add to Carousel & Stories Studio</span>
+                  </label>
+                </div>
+              )}
+
+              {format === 'STORY' && (
+                <div className="p-3 rounded-xl bg-pink-50/70 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-800/60 text-xs text-pink-900 dark:text-pink-200 space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <BookOpen className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+                    <span>Stories Sequence Planner Integration</span>
+                  </div>
+                  <p className="text-[11px] text-pink-700 dark:text-pink-300 leading-relaxed">
+                    An interactive 5-frame sequence (talking head, behind the scenes, poll, Q&A box, resources link) will be automatically created in your Stories Studio.
+                  </p>
+                  <label className="flex items-center gap-2 pt-1 font-semibold cursor-pointer text-[11px]">
+                    <input
+                      type="checkbox"
+                      checked={autoAddToStudio}
+                      onChange={(e) => setAutoAddToStudio(e.target.checked)}
+                      className="rounded border-pink-300 text-pink-600 focus:ring-pink-500 cursor-pointer"
+                    />
+                    <span>Automatically add to Carousel & Stories Studio</span>
+                  </label>
+                </div>
+              )}
+
               <div>
                 <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
                   Opening Hook
@@ -663,7 +814,7 @@ export default function IdeasPage() {
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 flex-wrap">
                 <Button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
@@ -673,7 +824,20 @@ export default function IdeasPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" size="sm" className="text-xs">
+                <Button
+                  type="button"
+                  onClick={(e) => handleCreateIdea(e, true)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-semibold"
+                >
+                  {format === 'CAROUSEL'
+                    ? 'Save & Open in Carousel Studio ➔'
+                    : format === 'STORY'
+                    ? 'Save & Open in Stories Studio ➔'
+                    : 'Save & Open in Script Studio ➔'}
+                </Button>
+                <Button type="submit" variant="primary" size="sm" className="text-xs font-semibold">
                   Save Idea
                 </Button>
               </div>
@@ -747,6 +911,20 @@ export default function IdeasPage() {
                 </select>
               </div>
 
+              {genFormat === 'CAROUSEL' && (
+                <div className="p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 text-[11px] text-blue-900 dark:text-blue-200 flex items-center gap-2">
+                  <Layers className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span>Generated ideas will automatically create slide decks in your Carousel Studio.</span>
+                </div>
+              )}
+
+              {genFormat === 'STORY' && (
+                <div className="p-2.5 rounded-xl bg-pink-50/70 dark:bg-pink-950/30 border border-pink-200/80 dark:border-pink-800/60 text-[11px] text-pink-900 dark:text-pink-200 flex items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5 text-pink-600 shrink-0" />
+                  <span>Generated ideas will automatically create sequences in your Stories Studio.</span>
+                </div>
+              )}
+
               <div className="pt-2 flex items-center justify-end gap-2">
                 <Button
                   type="button"
@@ -762,10 +940,14 @@ export default function IdeasPage() {
                   variant="primary"
                   size="sm"
                   isLoading={isGenerating}
-                  className="text-xs"
+                  className="text-xs font-semibold"
                 >
                   <Sparkles className="w-3.5 h-3.5 mr-1" />
-                  Generate 3 Ideas
+                  {genFormat === 'CAROUSEL'
+                    ? 'Generate & Add to Carousel Studio'
+                    : genFormat === 'STORY'
+                    ? 'Generate & Add to Stories Studio'
+                    : 'Generate 3 Ideas'}
                 </Button>
               </div>
             </form>

@@ -52,7 +52,7 @@ Return ONLY the raw JSON array. Do not include markdown code block formatting if
               pillar: (item.pillar as ContentPillar) || (pillar as ContentPillar),
               topic: item.topic || topic || 'Technical Workflows',
               targetAudience: item.targetAudience || targetAudience || 'Builders & Developers',
-              format: (item.format as ContentFormat) || (format as ContentFormat),
+              format: (format as ContentFormat) || (item.format as ContentFormat) || 'REELS',
               hook: item.hook || `Stop doing ${topic || 'this'} the hard way. Here is the realistic fix.`,
               mainAngle: item.mainAngle || 'Hands-on terminal or visual workflow demonstration.',
               supportingResearch: item.supportingResearch || 'Official documentation & tested benchmarks.',
@@ -74,13 +74,66 @@ Return ONLY the raw JSON array. Do not include markdown code block formatting if
 
     if (generated.length === 0) {
       const topicClean = (topic || '').trim() || 'Modern AI & Web Engineering';
-      const angleTemplates = [
+      const chosenFormat = (format as ContentFormat) || 'REELS';
+
+      const carouselTemplates = [
+        {
+          title: `5 Costly Architecture Mistakes in ${topicClean}`,
+          hook: `I audited dozens of ${topicClean} setups this month. Over 80% failed these 5 fundamentals. Swipe for the fixes ➔`,
+          mainAngle: `Multi-slide breakdown: Cover hook, Mistake 1 (Root cause vs symptoms), Mistake 2 (Unvalidated schemas), Mistake 3 (Latency bottlenecks), Mistake 4 (Premature complexity), Mistake 5 (Zero automated tests), and Summary checklist card.`,
+          supportingResearch: `Verified benchmarks from real production systems & developer logs.`,
+          format: 'CAROUSEL' as ContentFormat,
+          time: 45,
+          priority: 'High' as const,
+        },
+        {
+          title: `The 5-Step Visual Implementation Guide to ${topicClean}`,
+          hook: `Stop guessing how to build ${topicClean}. Here is the complete visual blueprint in 5 slides.`,
+          mainAngle: `Visual breakdown: Step 1 (Standardize data contracts), Step 2 (Isolate manual friction), Step 3 (Self-contained scripts), Step 4 (Local verification), Step 5 (Measurable outcomes).`,
+          supportingResearch: `Self-contained local architecture with zero recurring SaaS subscriptions.`,
+          format: 'CAROUSEL' as ContentFormat,
+          time: 50,
+          priority: 'High' as const,
+        },
+        {
+          title: `Before vs After: Refactoring ${topicClean} for Speed`,
+          hook: `Before: 6s response time & fragile pipelines. After: Sub-second execution & rock-solid stability. Here is what changed.`,
+          mainAngle: `Side-by-side contrast slides showing architecture diagrams, code diffs, and benchmark waterfall comparisons.`,
+          supportingResearch: `Documented testing on local hardware with verified latency improvements.`,
+          format: 'CAROUSEL' as ContentFormat,
+          time: 40,
+          priority: 'Medium' as const,
+        },
+      ];
+
+      const storyTemplates = [
+        {
+          title: `Behind the Scenes: Building ${topicClean} Today`,
+          hook: `Quick update on today's sprint: Tackling the core bottlenecks in ${topicClean}.`,
+          mainAngle: `5-frame story sequence: Frame 1 (Talking head context), Frame 2 (Screen capture of code/terminal), Frame 3 (Interactive audience poll), Frame 4 (Q&A box for technical edge cases), Frame 5 (Link to GitHub repo).`,
+          supportingResearch: `Real-time sprint progress log with zero artificial fluff.`,
+          format: 'STORY' as ContentFormat,
+          time: 25,
+          priority: 'High' as const,
+        },
+        {
+          title: `Audience Poll & Reflection: The Hardest Part of ${topicClean}`,
+          hook: `When you build ${topicClean}, what kills more of your time: fragile third-party APIs OR debugging unvalidated state?`,
+          mainAngle: `Interactive survey sequence engaging the builder community with follow-up insights.`,
+          supportingResearch: `Audience engagement framework designed to collect empirical feedback.`,
+          format: 'STORY' as ContentFormat,
+          time: 20,
+          priority: 'Medium' as const,
+        },
+      ];
+
+      const videoTemplates = [
         {
           title: `The Non-Obvious Framework for ${topicClean}`,
           hook: `Stop building ${topicClean} the hard way. Here is the non-obvious architecture rule top engineers follow.`,
           mainAngle: `A practical breakdown contrasting fragile surface-level wrappers with self-contained pipelines.`,
           supportingResearch: `Tested on local Ollama & SQLite pipelines with 0 cloud dependencies.`,
-          format: (format as ContentFormat) || 'REELS',
+          format: 'REELS' as ContentFormat,
           time: 45,
           priority: 'High' as const,
         },
@@ -89,7 +142,7 @@ Return ONLY the raw JSON array. Do not include markdown code block formatting if
           hook: `If your ${topicClean} workflow feels slow or unpredictable, you are probably making one of these 3 mistakes.`,
           mainAngle: `Step-by-step diagnostic audit: identifying latency bottlenecks, unvalidated schemas, and memory leaks.`,
           supportingResearch: `Documented benchmark analysis from real production systems.`,
-          format: (format as ContentFormat) || 'REELS',
+          format: 'REELS' as ContentFormat,
           time: 50,
           priority: 'High' as const,
         },
@@ -98,22 +151,20 @@ Return ONLY the raw JSON array. Do not include markdown code block formatting if
           hook: `You don't need a $200/month cloud setup for ${topicClean}. Here is the complete zero-cost local architecture.`,
           mainAngle: `Hands-on walkthrough with configuration files, terminal commands, and local benchmark results.`,
           supportingResearch: `Open-source repositories verified under MIT/Apache licenses.`,
-          format: (format as ContentFormat) || 'REELS',
+          format: 'REELS' as ContentFormat,
           time: 45,
           priority: 'Medium' as const,
         },
-        {
-          title: `5 Technical Lessons from Building Production ${topicClean}`,
-          hook: `Here are the 5 lessons I wish I knew before writing 10,000 lines of ${topicClean} code.`,
-          mainAngle: `Slide-by-slide checklist covering architecture pitfalls, testing rules, and performance wins.`,
-          supportingResearch: `Empirical developer logs and sprint review observations.`,
-          format: 'CAROUSEL' as ContentFormat,
-          time: 40,
-          priority: 'High' as const,
-        },
       ];
 
-      generated = angleTemplates.slice(0, Math.max(1, count || 3)).map((tpl, idx) => ({
+      const sourceTemplates =
+        chosenFormat === 'CAROUSEL'
+          ? carouselTemplates
+          : chosenFormat === 'STORY'
+          ? storyTemplates
+          : videoTemplates;
+
+      generated = sourceTemplates.slice(0, Math.max(1, count || 3)).map((tpl, idx) => ({
         id: `idea_gen_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
         title: tpl.title,
         pillar: (pillar as ContentPillar) || 'BUILDING_PROJECTS_AND_SYSTEMS',
