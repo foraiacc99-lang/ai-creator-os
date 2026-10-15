@@ -114,6 +114,8 @@ interface AppContextType {
   // Carousels & Stories
   addCarouselProject: (proj: Omit<CarouselProject, 'id' | 'updatedAt'>) => CarouselProject;
   updateCarouselProject: (id: string, updates: Partial<CarouselProject>) => void;
+  duplicateCarouselProject: (id: string) => CarouselProject;
+  renameCarouselProject: (id: string, newTitle: string) => void;
   deleteCarouselProject: (id: string) => void;
   addStorySequence: (story: Omit<StorySequence, 'id' | 'updatedAt'>) => StorySequence;
   updateStorySequence: (id: string, updates: Partial<StorySequence>) => void;
@@ -506,13 +508,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const cleanTopic = idea.topic || idea.title;
-    const hook = idea.hook || `Stop doing ${cleanTopic} the hard way.`;
+    const hook = idea.hook || `Stop approaching ${cleanTopic} the hard way.`;
 
     const newProj: CarouselProject = {
       id: `car_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       title: idea.title,
+      topic: cleanTopic,
       pillar: idea.pillar,
       intendedAudience: idea.targetAudience || 'Developers, builders, and technical creators',
+      goal: 'Educate and demonstrate practical implementation',
+      angle: idea.mainAngle,
+      structureType: 'Problem, Explanation, Solution',
+      contentBrief: {
+        mainTopic: cleanTopic,
+        specificAngle: idea.mainAngle || `Practical breakdown of ${cleanTopic}`,
+        targetAudience: idea.targetAudience || 'Technical builders and creators',
+        intendedTakeaway: idea.supportingResearch || `Mastering ${cleanTopic} requires standardizing your approach.`,
+        researchFindings: idea.supportingResearch ? [idea.supportingResearch] : [`Focusing on core mechanisms of ${cleanTopic}`],
+        sources: idea.sourceUrls || ['Documented technical standards'],
+        proposedOutline: [
+          `Hook: ${hook}`,
+          `The root challenge in ${cleanTopic}`,
+          `Strategic angle & implementation`,
+          `Practical example`,
+          `Key takeaway and action item`,
+        ],
+      },
+      researchSummary: idea.supportingResearch || `Topic investigation for ${cleanTopic}`,
+      researchSources: idea.sourceUrls || [],
+      isResearched: (idea.sourceUrls && idea.sourceUrls.length > 0) || false,
+      researchOffline: !(idea.sourceUrls && idea.sourceUrls.length > 0),
+      generationStatus: 'completed',
       coverSlide: {
         headline: hook,
         subtitle: idea.mainAngle || `A practical, fluff-free breakdown of ${cleanTopic}.`,
@@ -521,38 +547,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       slides: [
         {
           slideNumber: 1,
-          headline: `1. The Real Bottleneck in ${cleanTopic}`,
-          body: `Most builders tackle ${cleanTopic} by treating surface symptoms rather than the root architecture. They spend hours guessing and debugging.`,
-          visualDirection: 'Split graphic: Fragile makeshift setup vs. robust standardized pipeline.',
-          supportingExample: 'Over 80% of edge-case bugs stem from unvalidated inputs or premature complexity.',
+          headline: `1. The Root Challenge in ${cleanTopic}`,
+          body: `Most creators and builders approach ${cleanTopic} with generic shortcuts or superficial tools rather than understanding the core workflow.`,
+          visualDirection: 'Contrast diagram showing fragmented guesswork vs structured approach.',
+          supportingExample: idea.evidenceNotes || `Observed bottlenecks in ${cleanTopic}.`,
         },
         {
           slideNumber: 2,
-          headline: `2. The Non-Obvious Architecture Angle`,
-          body: idea.mainAngle || `Standardize your core data models and requirements before touching any tools. Isolate repetitive manual friction with local scripts.`,
+          headline: `2. The Strategic Angle`,
+          body: idea.mainAngle || `Focus on solving the core friction point before scaling or adding premature complexity.`,
           visualDirection: 'System architecture diagram with clear data boundaries.',
-          supportingExample: 'Standardizing inputs saves 10x more debugging time than premature optimization.',
+          supportingExample: 'Standardizing inputs upfront cuts debugging time by 10x.',
         },
         {
           slideNumber: 3,
           headline: `3. Step-by-Step Implementation`,
-          body: `Step 1: Standardize input data contracts.\nStep 2: Automate friction with self-contained scripts.\nStep 3: Measure execution latency and double down on proven outcomes.`,
-          visualDirection: 'Terminal screenshot running local verification benchmark.',
-          supportingExample: 'Grounded in observable code behavior with zero external black-box dependencies.',
+          body: `Phase 1: Identify the bottleneck.\nPhase 2: Implement verified constraints.\nPhase 3: Test and document observable outcomes.`,
+          visualDirection: 'Terminal or workflow checklist with status badges.',
+          supportingExample: idea.supportingResearch || 'Grounded in observable technical behavior.',
         },
         {
           slideNumber: 4,
-          headline: `4. Production Takeaway`,
-          body: `Stop relying on fragile workarounds. Own your core logic and test execution speed regularly.`,
-          visualDirection: 'Summary checklist card with verified takeaways.',
-          supportingExample: idea.supportingResearch || 'Documented engineering principles and local reproducibility.',
+          headline: `4. Key Production Takeaway`,
+          body: `Avoid generic shortcuts. Real progress comes from deliberate iteration and verified evidence.`,
+          visualDirection: 'Summary highlight box with key action items.',
+          supportingExample: 'Observed in real production build sprints.',
         },
       ],
       finalTakeaway: idea.supportingResearch || `Mastering ${cleanTopic} comes down to standardizing your system instead of guessing.`,
       callToAction: `Save this carousel for your next build sprint and comment below!`,
       caption: `${idea.title}\n\n${hook}\n\nSwipe through for the complete breakdown. 📌\n\nSave this for your next sprint! 🚀\n\n#buildinpublic #creatoros #solodev`,
-      researchReferences: idea.supportingResearch ? [idea.supportingResearch] : ['Tested benchmarks & production workflows'],
+      researchReferences: idea.sourceUrls || ['Documented technical standards'],
       status: 'draft',
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
@@ -993,10 +1020,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addCarouselProject = (
     data: Omit<CarouselProject, 'id' | 'updatedAt'>
   ): CarouselProject => {
+    const rawData = data as unknown as Record<string, unknown>;
     const newProj: CarouselProject = {
       ...data,
-      id: `car_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: (typeof rawData.id === 'string' && rawData.id) ? rawData.id : `car_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: (typeof rawData.createdAt === 'string' && rawData.createdAt) ? rawData.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      generationStatus: data.generationStatus || 'completed',
     };
     setCarousels((prev) => {
       const next = [newProj, ...prev];
@@ -1014,6 +1044,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       writeStorage(STORAGE_KEYS.CAROUSELS, next);
       return next;
     });
+  };
+
+  const duplicateCarouselProject = (id: string): CarouselProject => {
+    const target = carousels.find((c) => c.id === id);
+    if (!target) {
+      throw new Error(`Carousel ${id} not found`);
+    }
+    const newProj: CarouselProject = {
+      ...JSON.parse(JSON.stringify(target)),
+      id: `car_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: `${target.title} (Copy)`,
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      generationStatus: 'completed',
+    };
+    setCarousels((prev) => {
+      const next = [newProj, ...prev];
+      writeStorage(STORAGE_KEYS.CAROUSELS, next);
+      return next;
+    });
+    return newProj;
+  };
+
+  const renameCarouselProject = (id: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    updateCarouselProject(id, { title: newTitle.trim() });
   };
 
   const deleteCarouselProject = (id: string) => {
@@ -1361,6 +1418,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteReportNote,
         addCarouselProject,
         updateCarouselProject,
+        duplicateCarouselProject,
+        renameCarouselProject,
         deleteCarouselProject,
         addStorySequence,
         updateStorySequence,

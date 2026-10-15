@@ -211,13 +211,44 @@ export interface CarouselSlide {
   body: string;
   visualDirection: string;
   supportingExample?: string;
+  designNotes?: string;
+  sourceReferences?: string[];
+}
+
+export interface CarouselContentBrief {
+  mainTopic: string;
+  specificAngle: string;
+  targetAudience: string;
+  intendedTakeaway: string;
+  researchFindings: string[];
+  sources: string[];
+  proposedOutline: string[];
 }
 
 export interface CarouselProject {
   id: string;
   title: string;
+  topic?: string;
   pillar: ContentPillar;
   intendedAudience: string;
+  goal?: string;
+  angle?: string;
+  referenceUrl?: string;
+  additionalInstructions?: string;
+  structureType?:
+    | 'Problem, Explanation, Solution'
+    | 'Hook, Steps, Example, Takeaway'
+    | 'Myth, Reality, Evidence, Lesson'
+    | 'Mistake, Why it happens, Correction'
+    | 'Comparison, Trade-offs, Recommendation'
+    | 'Case Study, Process, Result'
+    | 'Tutorial, Prerequisites, Steps, Verification'
+    | 'Observation, Explanation, Practical Implication';
+  contentBrief?: CarouselContentBrief;
+  researchSummary?: string;
+  researchSources?: string[];
+  isResearched?: boolean;
+  researchOffline?: boolean;
   coverSlide: {
     headline: string;
     subtitle: string;
@@ -229,6 +260,8 @@ export interface CarouselProject {
   caption: string;
   researchReferences: string[];
   status: 'draft' | 'ready' | 'scheduled' | 'published';
+  generationStatus?: 'idle' | 'understanding' | 'researching' | 'briefing' | 'generating' | 'checking' | 'completed' | 'failed';
+  createdAt?: string;
   updatedAt: string;
 }
 
