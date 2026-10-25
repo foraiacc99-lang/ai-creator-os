@@ -17,6 +17,10 @@ import {
   AIProviderConfig,
   GoogleCalendarConfig,
   CompetitorPublicAnalysis,
+  LinkedInPostRecord,
+  OmniRouteModel,
+  ModelPreferences,
+  ModelModule,
 } from '@/types';
 import {
   INITIAL_PREFERENCES,
@@ -33,6 +37,8 @@ import {
   INITIAL_STORIES,
   INITIAL_AI_CONFIG,
   INITIAL_GOOGLE_CALENDAR_CONFIG,
+  INITIAL_LINKEDIN_POSTS,
+  INITIAL_MODEL_PREFERENCES,
 } from './demo-data';
 
 interface DuplicateCheckResult {
@@ -55,6 +61,7 @@ interface AppContextType {
   recommendations: AIRecommendation[];
   carousels: CarouselProject[];
   stories: StorySequence[];
+  linkedinPosts: LinkedInPostRecord[];
   aiConfig: AIProviderConfig;
   googleCalendar: GoogleCalendarConfig;
   theme: 'light' | 'dark' | 'system';
@@ -121,13 +128,35 @@ interface AppContextType {
   updateStorySequence: (id: string, updates: Partial<StorySequence>) => void;
   deleteStorySequence: (id: string) => void;
 
+  // LinkedIn Posts
+  addLinkedInPost: (post: Omit<LinkedInPostRecord, 'id' | 'createdAt' | 'updatedAt'>) => LinkedInPostRecord;
+  updateLinkedInPost: (id: string, updates: Partial<LinkedInPostRecord>) => void;
+  deleteLinkedInPost: (id: string) => void;
+  duplicateLinkedInPost: (id: string) => LinkedInPostRecord;
+  createLinkedInPostFromScript: (script: ScriptItem) => LinkedInPostRecord;
+  createLinkedInPostFromIdea: (idea: ContentIdea) => LinkedInPostRecord;
+  createLinkedInPostFromResearch: (research: ResearchRecord) => LinkedInPostRecord;
+  createLinkedInPostFromReport: (report: CreatorReportNote) => LinkedInPostRecord;
+  scheduleLinkedInPostToCalendar: (postId: string, plannedDate: string, plannedTime?: string) => CalendarEntry;
+
   // AI Recommendations
   updateRecommendationStatus: (id: string, status: AIRecommendation['status']) => void;
   convertRecommendationToIdea: (rec: AIRecommendation) => ContentIdea;
 
   // AI Configuration
   updateAIConfig: (updates: Partial<AIProviderConfig>) => void;
-  testAIConnection: () => Promise<{ success: boolean; message: string; models?: string[] }>;
+  testAIConnection: (overrideConfig?: Partial<AIProviderConfig>) => Promise<{ success: boolean; message: string; models?: string[]; latencyMs?: number }>;
+
+  // Model preferences & Dynamic OmniRoute Catalog
+  modelPreferences: ModelPreferences;
+  cachedModels: OmniRouteModel[];
+  isModelsLoading: boolean;
+  modelsError: string | null;
+  fetchOmniRouteModels: (forceRefresh?: boolean) => Promise<OmniRouteModel[]>;
+  updateModelPreferences: (updates: Partial<ModelPreferences>) => void;
+  getModelForModule: (module: ModelModule) => string;
+  setModelForModule: (module: ModelModule, modelId: string) => void;
+  resetModelPreferences: () => void;
 
   // Google Calendar Integration
   updateGoogleCalendarConfig: (updates: Partial<GoogleCalendarConfig>) => void;
@@ -156,7 +185,9 @@ const STORAGE_KEYS = {
   RECOMMENDATIONS: 'ai_creator_os_recommendations_v2',
   CAROUSELS: 'ai_creator_os_carousels_v2',
   STORIES: 'ai_creator_os_stories_v2',
+  LINKEDIN_POSTS: 'ai_creator_os_linkedin_posts_v2',
   AI_CONFIG: 'ai_creator_os_ai_config_v2',
+  MODEL_PREFERENCES: 'ai_creator_os_model_prefs_v2',
   GOOGLE_CALENDAR: 'ai_creator_os_google_cal_v2',
   THEME: 'ai_creator_os_theme_v2',
 };
@@ -221,9 +252,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [stories, setStories] = useState<StorySequence[]>(() =>
     readStorage(STORAGE_KEYS.STORIES, INITIAL_STORIES)
   );
+  const [linkedinPosts, setLinkedinPosts] = useState<LinkedInPostRecord[]>(() =>
+    readStorage(STORAGE_KEYS.LINKEDIN_POSTS, INITIAL_LINKEDIN_POSTS)
+  );
   const [aiConfig, setAIConfig] = useState<AIProviderConfig>(() =>
     readStorage(STORAGE_KEYS.AI_CONFIG, INITIAL_AI_CONFIG)
   );
+  const [modelPreferences, setModelPreferences] = useState<ModelPreferences>(() =>
+    readStorage(STORAGE_KEYS.MODEL_PREFERENCES, INITIAL_MODEL_PREFERENCES)
+  );
+  const [cachedModels, setCachedModels] = useState<OmniRouteModel[]>([]);
+  const [isModelsLoading, setIsModelsLoading] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
   const [googleCalendar, setGoogleCalendar] = useState<GoogleCalendarConfig>(() => {
     const saved = readStorage<GoogleCalendarConfig>(STORAGE_KEYS.GOOGLE_CALENDAR, INITIAL_GOOGLE_CALENDAR_CONFIG);
     if (!saved || !saved.isConnected || saved.userEmail !== 'foraiacc.99@gmail.com') {
@@ -500,13 +540,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createCarouselFromIdea = (idea: ContentIdea): CarouselProject => {
-    const existing = carousels.find(
-      (c) => (idea.relatedCarouselIds && idea.relatedCarouselIds.includes(c.id)) || c.title === idea.title
-    );
-    if (existing) {
-      return existing;
-    }
-
+    // Always generate an independent, freshly structured CarouselProject
     const cleanTopic = idea.topic || idea.title;
     const hook = idea.hook || `Stop approaching ${cleanTopic} the hard way.`;
 
@@ -1158,26 +1192,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const testAIConnection = async (): Promise<{
+  const testAIConnection = async (overrideConfig?: Partial<AIProviderConfig>): Promise<{
     success: boolean;
     message: string;
     models?: string[];
+    latencyMs?: number;
   }> => {
     try {
+      const configToTest = { ...aiConfig, ...(overrideConfig || {}) };
       const res = await fetch('/api/ai/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aiConfig }),
+        body: JSON.stringify({ aiConfig: configToTest }),
       });
       const data = await res.json();
       if (data.success) {
         updateAIConfig({
+          ...configToTest,
           isConnected: true,
           availableModels: data.models || aiConfig.availableModels,
           statusMessage: data.message,
         });
       } else {
         updateAIConfig({
+          ...configToTest,
           isConnected: false,
           statusMessage: data.message,
         });
@@ -1189,6 +1227,89 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateAIConfig({ isConnected: false, statusMessage: failMsg });
       return { success: false, message: failMsg };
     }
+  };
+
+  // Dynamic OmniRoute Model Catalog & Preferences
+  const fetchOmniRouteModels = async (forceRefresh = false): Promise<OmniRouteModel[]> => {
+    setIsModelsLoading(true);
+    setModelsError(null);
+    try {
+      const endpoint = aiConfig.omniRouteEndpoint || 'http://localhost:20128/v1';
+      const res = await fetch(
+        `/api/ai/models?endpoint=${encodeURIComponent(endpoint)}&refresh=${forceRefresh}`,
+        {
+          headers: aiConfig.omniRouteApiKey
+            ? { 'x-omniroute-key': aiConfig.omniRouteApiKey }
+            : {},
+        }
+      );
+      const data = await res.json();
+      if (data.success && Array.isArray(data.models)) {
+        setCachedModels(data.models);
+        setIsModelsLoading(false);
+        return data.models;
+      } else {
+        setModelsError(data.error || 'Failed to load model catalog from OmniRoute.');
+        setIsModelsLoading(false);
+        return cachedModels;
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      setModelsError(error.message || 'Cannot contact OmniRoute gateway.');
+      setIsModelsLoading(false);
+      return cachedModels;
+    }
+  };
+
+  const updateModelPreferences = (updates: Partial<ModelPreferences>) => {
+    setModelPreferences((prev) => {
+      const next: ModelPreferences = {
+        ...prev,
+        ...updates,
+        moduleOverrides: {
+          ...(prev.moduleOverrides || {}),
+          ...(updates.moduleOverrides || {}),
+        },
+      };
+      writeStorage(STORAGE_KEYS.MODEL_PREFERENCES, next);
+      return next;
+    });
+  };
+
+  const getModelForModule = (module: ModelModule): string => {
+    // 1. Module-specific override
+    const override = modelPreferences.moduleOverrides?.[module];
+    if (override && override.trim()) {
+      return override.trim();
+    }
+    // 2. Global default model
+    if (modelPreferences.globalDefault && modelPreferences.globalDefault.trim()) {
+      return modelPreferences.globalDefault.trim();
+    }
+    // 3. Provider-specific model
+    if (aiConfig.provider === 'omniroute' && aiConfig.omniRouteModel) {
+      return aiConfig.omniRouteModel;
+    }
+    return 'kimi-k1.5';
+  };
+
+  const setModelForModule = (module: ModelModule, modelId: string) => {
+    updateModelPreferences({
+      moduleOverrides: {
+        ...modelPreferences.moduleOverrides,
+        [module]: modelId,
+      },
+    });
+  };
+
+  const resetModelPreferences = () => {
+    const resetPrefs: ModelPreferences = {
+      globalDefault: modelPreferences.globalDefault || 'kimi-k1.5',
+      moduleOverrides: {},
+      freeOnlyMode: false,
+    };
+    setModelPreferences(resetPrefs);
+    writeStorage(STORAGE_KEYS.MODEL_PREFERENCES, resetPrefs);
   };
 
   // Google Calendar Integration
@@ -1212,6 +1333,297 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     writeStorage(STORAGE_KEYS.GOOGLE_CALENDAR, next);
   };
 
+  // LinkedIn Posts
+  const addLinkedInPost = (
+    data: Omit<LinkedInPostRecord, 'id' | 'createdAt' | 'updatedAt'>
+  ): LinkedInPostRecord => {
+    const newPost: LinkedInPostRecord = {
+      ...data,
+      id: `li_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setLinkedinPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const updateLinkedInPost = (id: string, updates: Partial<LinkedInPostRecord>) => {
+    setLinkedinPosts((prev) => {
+      const next = prev.map((p) =>
+        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+      );
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+  };
+
+  const deleteLinkedInPost = (id: string) => {
+    setLinkedinPosts((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+  };
+
+  const duplicateLinkedInPost = (id: string): LinkedInPostRecord => {
+    const original = linkedinPosts.find((p) => p.id === id) || linkedinPosts[0];
+    const newPost: LinkedInPostRecord = {
+      ...original,
+      id: `li_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: `${original.title} [Copy]`,
+      status: 'Draft',
+      plannedDate: undefined,
+      plannedTime: undefined,
+      calendarEntryId: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setLinkedinPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const createLinkedInPostFromScript = (script: ScriptItem): LinkedInPostRecord => {
+    const spoken = script.currentSpokenScript || script.spokenScriptLong || script.spokenScriptShort;
+    const cleanSpoken = spoken
+      .replace(/^stop doing .*?fix:?/i, '')
+      .replace(/save this video.*?$/i, '')
+      .trim();
+
+    const title = `LinkedIn: ${script.title}`;
+    const initialContent = `${script.hookOptions?.[0] || script.title}\n\n${cleanSpoken}\n\nNotice the difference: focusing on root architecture always beats guessing and treating surface symptoms.\n\nSave this breakdown for your next build sprint!`;
+
+    const newPost: LinkedInPostRecord = {
+      id: `li_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      topic: script.title,
+      niche: 'Building projects and business systems',
+      contentPillar: script.pillar,
+      targetAudience: 'Developers, builders, and technical creators',
+      postObjective: 'Share a lesson',
+      postFormat: 'Professional Insight',
+      writingStyle: 'Professional and conversational',
+      postLength: 'Medium',
+      userNotes: `Converted from Reel Script "${script.title}". Spoken script length: ${spoken.split(/\s+/).length} words.`,
+      generatedContent: initialContent,
+      currentEditedContent: initialContent,
+      alternativeVersions: [
+        `Why most builders get stuck on ${script.title} and the clean 3-step fix.`,
+      ],
+      ctaSettings: {
+        type: 'Offer a resource through comments',
+        resourceKeyword: 'TEMPLATE',
+        resourceName: `${script.title} Implementation Guide`,
+        resourceReady: true,
+      },
+      sourceReference: {
+        type: 'script',
+        id: script.id,
+        title: script.title,
+      },
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setLinkedinPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const createLinkedInPostFromIdea = (idea: ContentIdea): LinkedInPostRecord => {
+    const hook = idea.hook || `Stop approaching ${idea.topic || idea.title} the hard way.`;
+    const title = `LinkedIn: ${idea.title}`;
+    const initialContent = `${hook}\n\nMost technical builders get stuck on ${idea.topic || 'this challenge'} because they focus on premature optimizations instead of the foundational pipeline.\n\nHere is the realistic framework that actually works:\n\n1. Standardize your input data models before touching external libraries.\n2. Isolate manual friction with self-contained, automated scripts.\n3. Measure execution speed and double down strictly on verifiable outcomes.\n\nWhen your foundational system is solid, scaling becomes a matter of execution rather than constant troubleshooting.\n\nSave this post for your next sprint!`;
+
+    const newPost: LinkedInPostRecord = {
+      id: `li_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      topic: idea.topic || idea.title,
+      niche: 'AI tools and automation',
+      contentPillar: idea.pillar,
+      targetAudience: idea.targetAudience || 'Developers, builders, and technical founders',
+      postObjective: 'Share a lesson',
+      postFormat: 'Educational Post',
+      writingStyle: 'Professional and conversational',
+      postLength: 'Medium',
+      userNotes: idea.supportingResearch || idea.evidenceNotes || `Derived from Content Idea "${idea.title}".`,
+      generatedContent: initialContent,
+      currentEditedContent: initialContent,
+      alternativeVersions: [
+        `A practical, fluff-free breakdown of ${idea.topic || idea.title}.`,
+      ],
+      ctaSettings: {
+        type: 'Ask a professional discussion question',
+        customText: `What is the most common bottleneck you run into when executing ${idea.topic || 'this workflow'}?`,
+      },
+      sourceReference: {
+        type: 'idea',
+        id: idea.id,
+        title: idea.title,
+      },
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setLinkedinPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const createLinkedInPostFromResearch = (researchRec: ResearchRecord): LinkedInPostRecord => {
+    const isGh = researchRec.isGithubRepo;
+    const title = `LinkedIn: ${researchRec.title.slice(0, 50)}`;
+    const initialContent = isGh
+      ? `Most developers evaluate open-source tools by GitHub stars alone.\n\nThat is usually how you inherit an unmaintained dependency that breaks in production three weeks later.\n\nI evaluated ${researchRec.githubData?.name || researchRec.title} across practical engineering criteria:\n- Maintenance: Last updated ${researchRec.githubData?.lastUpdated || 'recently'}\n- Cost & API Isolation: ${researchRec.githubData?.requiresPaidApis ? 'Requires external paid API keys' : 'Runs 100% self-hosted with zero recurring fees'}\n- License: Licensed under ${researchRec.githubData?.license || 'Open-source'}\n\n${researchRec.summary}\n\nBefore adopting another library into your stack, check the commit frequency and dependency tree.\n\nComment "GITHUB" if you would like the repository link and setup notes.`
+      : `Research Notes: ${researchRec.title}\n\n${researchRec.summary}\n\nKey observable findings:\n${researchRec.relevantClaims.map((c) => `• ${c}`).join('\n')}\n\nGrounded in official documentation and observable technical behavior rather than hype.`;
+
+    const newPost: LinkedInPostRecord = {
+      id: `li_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      topic: researchRec.title,
+      niche: isGh ? 'Open-source AI tools and GitHub repositories' : 'Website development',
+      contentPillar: researchRec.pillar,
+      targetAudience: 'Developers, software engineers, and AI builders',
+      postObjective: isGh ? 'Share a GitHub repository' : 'Introduce an AI tool',
+      postFormat: isGh ? 'Tool or GitHub Discovery' : 'Educational Post',
+      writingStyle: 'Technical',
+      postLength: 'Medium',
+      userNotes: researchRec.summary,
+      generatedContent: initialContent,
+      currentEditedContent: initialContent,
+      ctaSettings: {
+        type: isGh ? 'Offer a resource through comments' : 'No CTA',
+        resourceKeyword: isGh ? 'GITHUB' : undefined,
+        resourceName: `${researchRec.title} Setup Notes`,
+        resourceReady: true,
+      },
+      isResearchEnabled: true,
+      researchSummary: researchRec.summary,
+      researchSources: [
+        {
+          title: researchRec.title,
+          url: researchRec.url,
+          sourceName: researchRec.sourceName,
+          confidenceStatus: researchRec.confidenceStatus,
+        },
+      ],
+      sourceReference: {
+        type: 'research',
+        id: researchRec.id,
+        title: researchRec.title,
+      },
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setLinkedinPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const createLinkedInPostFromReport = (rep: CreatorReportNote): LinkedInPostRecord => {
+    const title = `LinkedIn: ${rep.title}`;
+    const initialContent = `Here is an honest reflection from our build sprint:\n\n${rep.observations}\n\nKey practical lessons:\n${rep.lessonsLearned}\n\nNext actions we are implementing:\n${rep.nextActions}\n\nBuilding simple, reliable workflows in public keeps us focused on measurable progress rather than busywork.`;
+
+    const newPost: LinkedInPostRecord = {
+      id: `li_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      topic: rep.title,
+      niche: 'Build in public',
+      contentPillar: 'BUILD_IN_PUBLIC_AND_JOURNEY',
+      targetAudience: 'Solo founders, builders, and agency owners',
+      postObjective: 'Document a project update',
+      postFormat: 'Build in Public',
+      writingStyle: 'Personal and reflective',
+      postLength: 'Medium',
+      userNotes: `${rep.observations}\n\n${rep.lessonsLearned}`,
+      generatedContent: initialContent,
+      currentEditedContent: initialContent,
+      ctaSettings: {
+        type: 'Invite relevant connections',
+      },
+      sourceReference: {
+        type: 'report',
+        id: rep.id,
+        title: rep.title,
+      },
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setLinkedinPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const scheduleLinkedInPostToCalendar = (
+    postId: string,
+    plannedDate: string,
+    plannedTime = '09:00'
+  ): CalendarEntry => {
+    const post = linkedinPosts.find((p) => p.id === postId);
+    if (!post) throw new Error('LinkedIn post not found');
+
+    // Create or update calendar entry
+    const existingEntry = calendar.find((c) => c.linkedInPostId === postId);
+    let calEntry: CalendarEntry;
+
+    if (existingEntry) {
+      updateCalendarEntry(existingEntry.id, {
+        title: `LinkedIn: ${post.title}`,
+        plannedDate,
+        plannedTime,
+        status: post.status === 'Ready to Publish' ? 'Ready to Publish' : 'Inbox',
+        stage: post.status === 'Ready to Publish' ? 'Planned Publishing' : 'Caption & Final Prep',
+      });
+      calEntry = { ...existingEntry, plannedDate, plannedTime };
+    } else {
+      calEntry = addCalendarEntry({
+        title: `LinkedIn: ${post.title}`,
+        plannedDate,
+        plannedTime,
+        format: 'LINKEDIN',
+        pillar: post.contentPillar,
+        stage: post.status === 'Ready to Publish' ? 'Planned Publishing' : 'Caption & Final Prep',
+        status: post.status === 'Ready to Publish' ? 'Ready to Publish' : 'Inbox',
+        linkedInPostId: postId,
+        notes: `LinkedIn Post: "${post.topic}". Audience: ${post.targetAudience}`,
+        isSyncedToGoogle: false,
+      });
+    }
+
+    updateLinkedInPost(postId, {
+      plannedDate,
+      plannedTime,
+      calendarEntryId: calEntry.id,
+    });
+
+    return calEntry;
+  };
+
   // Data Management
   const exportAllDataJSON = (): string => {
     const fullBackup = {
@@ -1226,6 +1638,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reports,
       carousels,
       stories,
+      linkedinPosts,
       recommendations,
       exportedAt: new Date().toISOString(),
       version: '2.0.0',
@@ -1289,6 +1702,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setReports(data.reports);
           writeStorage(STORAGE_KEYS.REPORTS, data.reports);
         }
+        if (Array.isArray(data.carousels)) {
+          setCarousels(data.carousels);
+          writeStorage(STORAGE_KEYS.CAROUSELS, data.carousels);
+        }
+        if (Array.isArray(data.stories)) {
+          setStories(data.stories);
+          writeStorage(STORAGE_KEYS.STORIES, data.stories);
+        }
+        if (Array.isArray(data.linkedinPosts)) {
+          setLinkedinPosts(data.linkedinPosts);
+          writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, data.linkedinPosts);
+        }
         if (data.preferences) {
           setPreferences(data.preferences);
           writeStorage(STORAGE_KEYS.PREFERENCES, data.preferences);
@@ -1320,8 +1745,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setRecommendations(INITIAL_RECOMMENDATIONS);
       setCarousels(INITIAL_CAROUSELS);
       setStories(INITIAL_STORIES);
+      setLinkedinPosts(INITIAL_LINKEDIN_POSTS);
       setAIConfig(INITIAL_AI_CONFIG);
       setGoogleCalendar(INITIAL_GOOGLE_CALENDAR_CONFIG);
+      setModelPreferences(INITIAL_MODEL_PREFERENCES);
 
       writeStorage(STORAGE_KEYS.PREFERENCES, INITIAL_PREFERENCES);
       writeStorage(STORAGE_KEYS.SNAPSHOTS, INITIAL_GROWTH_SNAPSHOTS);
@@ -1335,7 +1762,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       writeStorage(STORAGE_KEYS.RECOMMENDATIONS, INITIAL_RECOMMENDATIONS);
       writeStorage(STORAGE_KEYS.CAROUSELS, INITIAL_CAROUSELS);
       writeStorage(STORAGE_KEYS.STORIES, INITIAL_STORIES);
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, INITIAL_LINKEDIN_POSTS);
       writeStorage(STORAGE_KEYS.AI_CONFIG, INITIAL_AI_CONFIG);
+      writeStorage(STORAGE_KEYS.MODEL_PREFERENCES, INITIAL_MODEL_PREFERENCES);
       writeStorage(STORAGE_KEYS.GOOGLE_CALENDAR, INITIAL_GOOGLE_CALENDAR_CONFIG);
     });
   };
@@ -1351,6 +1780,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setReports([]);
       setCarousels([]);
       setStories([]);
+      setLinkedinPosts([]);
 
       writeStorage(STORAGE_KEYS.SNAPSHOTS, []);
       writeStorage(STORAGE_KEYS.IDEAS, []);
@@ -1361,6 +1791,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       writeStorage(STORAGE_KEYS.REPORTS, []);
       writeStorage(STORAGE_KEYS.CAROUSELS, []);
       writeStorage(STORAGE_KEYS.STORIES, []);
+      writeStorage(STORAGE_KEYS.LINKEDIN_POSTS, []);
     });
   };
 
@@ -1379,7 +1810,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         recommendations,
         carousels,
         stories,
+        linkedinPosts,
         aiConfig,
+        modelPreferences,
+        cachedModels,
+        isModelsLoading,
+        modelsError,
+        fetchOmniRouteModels,
+        updateModelPreferences,
+        getModelForModule,
+        setModelForModule,
+        resetModelPreferences,
         googleCalendar,
         theme,
         isPending,
@@ -1424,6 +1865,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addStorySequence,
         updateStorySequence,
         deleteStorySequence,
+        addLinkedInPost,
+        updateLinkedInPost,
+        deleteLinkedInPost,
+        duplicateLinkedInPost,
+        createLinkedInPostFromScript,
+        createLinkedInPostFromIdea,
+        createLinkedInPostFromResearch,
+        createLinkedInPostFromReport,
+        scheduleLinkedInPostToCalendar,
         updateRecommendationStatus,
         convertRecommendationToIdea,
         updateAIConfig,

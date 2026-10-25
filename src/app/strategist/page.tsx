@@ -26,6 +26,7 @@ import {
   Video,
   BookOpen,
 } from 'lucide-react';
+import { ModelSelector } from '@/components/ai/model-selector';
 
 export default function StrategistPage() {
   const router = useRouter();
@@ -43,6 +44,7 @@ export default function StrategistPage() {
     ideas,
     snapshots,
     research,
+    getModelForModule,
   } = useApp();
 
   const [selectedPillar, setSelectedPillar] = useState<string>('ALL');
@@ -128,6 +130,7 @@ export default function StrategistPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ModelSelector currentModule="strategist" compact={true} />
           <Button
             onClick={handleRegenerate}
             variant="outline"
@@ -153,7 +156,7 @@ export default function StrategistPage() {
           <span>Saved Research: <strong>{research.length} records</strong></span>
         </div>
         <span className="font-mono text-[11px] text-neutral-500">
-          Ollama model: {aiConfig.textModel}
+          Selected Model: <strong className="text-neutral-800 dark:text-neutral-200">{getModelForModule('strategist')}</strong> ({aiConfig.provider === 'omniroute' ? 'OmniRoute Gateway' : aiConfig.provider})
         </span>
       </div>
 

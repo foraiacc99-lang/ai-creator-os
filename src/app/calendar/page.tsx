@@ -339,8 +339,15 @@ export default function CalendarPage() {
                     >
                       {pillarInfo?.shortTitle || entry.pillar}
                     </span>
-                    <Badge variant="outline" className="text-[10px] py-0 px-1.5">
-                      {entry.format}
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] py-0 px-1.5 ${
+                        entry.format === 'LINKEDIN'
+                          ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border-sky-300 dark:border-sky-800 font-semibold'
+                          : ''
+                      }`}
+                    >
+                      {entry.format === 'LINKEDIN' ? 'LinkedIn Post' : entry.format}
                     </Badge>
                   </div>
 
@@ -410,7 +417,16 @@ export default function CalendarPage() {
                         TODAY
                       </span>
                     )}
-                    <Badge variant="outline" className="text-[10px] py-0">{entry.format}</Badge>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] py-0 ${
+                        entry.format === 'LINKEDIN'
+                          ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 border-sky-300 dark:border-sky-800 font-semibold'
+                          : ''
+                      }`}
+                    >
+                      {entry.format === 'LINKEDIN' ? 'LinkedIn' : entry.format}
+                    </Badge>
                     <Badge variant={entry.isSyncedToGoogle ? 'success' : 'secondary'} className="text-[10px] py-0">
                       {entry.isSyncedToGoogle ? 'Google Synced' : 'Local'}
                     </Badge>
@@ -541,6 +557,7 @@ export default function CalendarPage() {
                     className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 cursor-pointer"
                   >
                     <option value="REELS">Reels / Shorts</option>
+                    <option value="LINKEDIN">LinkedIn Post</option>
                     <option value="CAROUSEL">Carousel Deck</option>
                     <option value="STORY">Story</option>
                   </select>

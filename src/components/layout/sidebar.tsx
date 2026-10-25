@@ -24,6 +24,22 @@ import {
   Laptop,
 } from 'lucide-react';
 
+const LinkedInIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
@@ -31,17 +47,19 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
-  const { ideas, calendar, scripts, aiConfig, theme, setTheme, preferences } = useApp();
+  const { ideas, calendar, scripts, linkedinPosts, aiConfig, theme, setTheme, preferences } = useApp();
 
   const scriptReadyCount = scripts.filter((s) => s.status === 'ready_for_filming').length;
   const scheduledCount = calendar.filter((c) => c.status === 'Ready to Publish' || c.stage === 'Shooting').length;
   const ideasInboxCount = ideas.filter((i) => i.status === 'Inbox').length;
+  const linkedInCount = (linkedinPosts || []).filter((p) => p.status === 'Ready to Publish' || p.status === 'Draft').length;
 
   const workspaceNav = [
     { name: 'Home', href: '/', icon: LayoutDashboard },
     { name: 'AI Strategist', href: '/strategist', icon: Sparkles, badge: 'AI' },
     { name: 'Content Ideas', href: '/ideas', icon: Lightbulb, count: ideasInboxCount > 0 ? ideasInboxCount : ideas.length },
     { name: 'Script Studio', href: '/scripts', icon: FileEdit, count: scriptReadyCount > 0 ? scriptReadyCount : undefined },
+    { name: 'LinkedIn Posts', href: '/linkedin', icon: LinkedInIcon, count: linkedInCount > 0 ? linkedInCount : undefined },
     { name: 'Carousel & Stories', href: '/carousel', icon: Layers },
     { name: 'Competitor Research', href: '/competitor', icon: Search },
     { name: 'Content Calendar', href: '/calendar', icon: Calendar, count: scheduledCount > 0 ? scheduledCount : undefined },

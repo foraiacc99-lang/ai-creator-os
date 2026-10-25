@@ -21,6 +21,7 @@ import {
   Eye,
   BookOpen,
 } from 'lucide-react';
+import { ModelSelector } from '@/components/ai/model-selector';
 
 export default function CompetitorResearchPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function CompetitorResearchPage() {
     addCompetitorAnalysis,
     addIdea,
     aiConfig,
+    getModelForModule,
   } = useApp();
 
   const [activeCompetitorId, setActiveCompetitorId] = useState<string>(competitors[0]?.id || '');
@@ -97,13 +99,50 @@ export default function CompetitorResearchPage() {
 
       // Construct a structured analysis extracting hook, structure, and original adaptation angle
       const lines = textToAnalyze.split('\n').filter(Boolean);
-      const hook = lines[0] || 'Stop doing X the hard way.';
+      let hook = lines[0] || 'Stop doing X the hard way.';
+      let mainAngle = 'Contrasting complicated cloud setups with simple local alternatives.';
+      let contentGaps = ['Did not explain setup difficulty or hardware specs required.'];
+      let originalAdaptationIdea = `Create an original breakdown showing the realistic minimum hardware specs for local developer tools, addressing the gap in ${activeCompetitor.creatorName}'s post.`;
+
+      // Optional AI synthesis with the module's selected model
+      try {
+        const selectedModel = getModelForModule('competitor');
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an empirical content strategist analyzing public creator content. Return a valid JSON object with keys: hook, mainAngle, contentGap, adaptationIdea.',
+              },
+              {
+                role: 'user',
+                content: `Creator: ${activeCompetitor.creatorName}\nText to analyze:\n${textToAnalyze.slice(0, 1500)}`,
+              },
+            ],
+            model: selectedModel,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const clean = (data.message || '').replace(/```json/g, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(clean);
+          if (parsed.hook) hook = parsed.hook;
+          if (parsed.mainAngle) mainAngle = parsed.mainAngle;
+          if (parsed.contentGap) contentGaps = [parsed.contentGap];
+          if (parsed.adaptationIdea) originalAdaptationIdea = parsed.adaptationIdea;
+        }
+      } catch {
+        // Fallback gracefully without fabricating external metrics
+      }
 
       const analysis: Omit<CompetitorPublicAnalysis, 'id' | 'retrievalDate'> = {
         postUrl: postUrl || 'https://instagram.com/p/example',
         topic: 'Technical Workflow & Architecture',
         hook,
-        mainAngle: 'Contrasting complicated cloud setups with simple local alternatives.',
+        mainAngle,
         structure: 'Problem hook -> Contrast proof -> 3 reasons -> CTA to comment.',
         storytellingApproach: 'Demonstration and roleplay',
         format: 'REELS (45s)',
@@ -111,8 +150,8 @@ export default function CompetitorResearchPage() {
         presentationStyle: 'Direct eye contact with screen recordings',
         audienceProblem: 'Developers tired of paying expensive SaaS fees for simple features.',
         usefulTechniques: ['Fast cuts between terminal and browser', 'Highlighted code subtitles'],
-        contentGaps: ['Did not explain setup difficulty or hardware specs required.'],
-        originalAdaptationIdea: `Create an original breakdown showing the realistic minimum hardware specs for local developer tools, addressing the gap in ${creatorName || 'this creator\'s'} post.`,
+        contentGaps,
+        originalAdaptationIdea,
         publicMetrics: {
           likes: Number(manualLikes),
           comments: Number(manualComments),
@@ -168,12 +207,13 @@ export default function CompetitorResearchPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ModelSelector currentModule="competitor" compact={true} />
           <Button onClick={() => setAddCreatorModalOpen(true)} variant="outline" size="sm" className="text-xs">
-            <Plus className="w-3.5 h-3.5 mr-1" /> Add Creator to Watchlist
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add Creator
           </Button>
 
           <Button onClick={() => setAnalyzePostModalOpen(true)} variant="primary" size="sm" className="text-xs">
-            <Search className="w-3.5 h-3.5 mr-1" /> Analyze Public Post / Transcript
+            <Search className="w-3.5 h-3.5 mr-1" /> Analyze Post
           </Button>
         </div>
       </div>

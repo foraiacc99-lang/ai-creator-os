@@ -38,6 +38,7 @@ import {
   Globe,
   CheckCircle,
 } from 'lucide-react';
+import { ModelSelector } from '@/components/ai/model-selector';
 
 type CreationStage =
   | 'idle'
@@ -73,6 +74,7 @@ function CarouselStudioContent() {
     addCalendarEntry,
     preferences,
     aiConfig,
+    getModelForModule,
     addIdea,
   } = useApp();
 
@@ -231,6 +233,13 @@ function CarouselStudioContent() {
 
       // Stage 2: Researching sources
       setCurrentStage('researching');
+      const selectedModel = getModelForModule('carousel');
+      const carouselAiConfig = {
+        ...aiConfig,
+        model: selectedModel,
+        omniRouteModel: selectedModel,
+      };
+
       const researchRes = await fetch('/api/ai/generate-carousel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -241,7 +250,7 @@ function CarouselStudioContent() {
           targetAudience: genAudience,
           referenceUrl: genRefUrl,
           additionalInstructions: genInstructions,
-          aiConfig,
+          aiConfig: carouselAiConfig,
         }),
       });
 
@@ -275,7 +284,7 @@ function CarouselStudioContent() {
           referenceUrl: genRefUrl,
           additionalInstructions: genInstructions,
           structureType: genStructure,
-          aiConfig,
+          aiConfig: carouselAiConfig,
         }),
       });
 
@@ -318,6 +327,13 @@ function CarouselStudioContent() {
     setBriefReviewOpen(false);
     setPipelineProgressOpen(true);
 
+    const selectedModel = getModelForModule('carousel');
+    const carouselAiConfig = {
+      ...aiConfig,
+      model: selectedModel,
+      omniRouteModel: selectedModel,
+    };
+
     const generateRes = await fetch('/api/ai/generate-carousel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -334,7 +350,7 @@ function CarouselStudioContent() {
         structureType: genStructure,
         contentBrief: brief,
         existingCarousels: carousels,
-        aiConfig,
+        aiConfig: carouselAiConfig,
       }),
     });
 
@@ -586,6 +602,7 @@ function CarouselStudioContent() {
     e.preventDefault();
     setIsGeneratingStory(true);
     try {
+      const selectedModel = getModelForModule('carousel');
       const res = await fetch('/api/ai/generate-carousel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -594,7 +611,11 @@ function CarouselStudioContent() {
           topic: storyTopic || 'Practical Engineering Update',
           storyObjective,
           targetAudience: preferences.targetAudience,
-          aiConfig,
+          aiConfig: {
+            ...aiConfig,
+            model: selectedModel,
+            omniRouteModel: selectedModel,
+          },
         }),
       });
 
@@ -644,6 +665,8 @@ function CarouselStudioContent() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <ModelSelector currentModule="carousel" />
+
           {activeTab === 'carousel' ? (
             <>
               <Button

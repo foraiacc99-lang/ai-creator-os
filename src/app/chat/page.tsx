@@ -20,6 +20,7 @@ import {
   Trash2,
   BookOpen,
 } from 'lucide-react';
+import { ModelSelector } from '@/components/ai/model-selector';
 
 const SUGGESTED_PROMPTS = [
   'What should I shoot today based on my backlog and bandwidth?',
@@ -44,6 +45,7 @@ export default function AIChatPage() {
     preferences,
     styleProfile,
     aiConfig,
+    getModelForModule,
     addIdea,
     createCarouselFromIdea,
     createStoryFromIdea,
@@ -83,6 +85,7 @@ export default function AIChatPage() {
     setIsLoading(true);
 
     try {
+      const selectedModel = getModelForModule('chat');
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -99,7 +102,11 @@ export default function AIChatPage() {
             preferences,
             styleProfile,
           },
-          aiConfig,
+          aiConfig: {
+            ...aiConfig,
+            model: selectedModel,
+            omniRouteModel: selectedModel,
+          },
         }),
       });
 
@@ -208,10 +215,13 @@ export default function AIChatPage() {
           </div>
         </div>
 
-        <Button onClick={handleClearHistory} variant="outline" size="sm" className="text-xs h-8">
-          <Trash2 className="w-3.5 h-3.5 mr-1 text-neutral-400" />
-          Clear Chat
-        </Button>
+        <div className="flex items-center gap-2">
+          <ModelSelector currentModule="chat" />
+          <Button onClick={handleClearHistory} variant="outline" size="sm" className="text-xs h-8">
+            <Trash2 className="w-3.5 h-3.5 mr-1 text-neutral-400" />
+            Clear Chat
+          </Button>
+        </div>
       </div>
 
       {/* Suggested Prompts Pills */}

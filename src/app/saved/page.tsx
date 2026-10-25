@@ -24,9 +24,9 @@ import {
 } from 'lucide-react';
 
 export default function SavedContentPage() {
-  const { ideas, scripts, research, competitors, reports, carousels, exportAllDataJSON } = useApp();
+  const { ideas, scripts, research, competitors, reports, carousels, linkedinPosts, exportAllDataJSON } = useApp();
 
-  const [activeCategory, setActiveCategory] = useState<'all' | 'ideas' | 'scripts' | 'research' | 'competitors' | 'reports'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'ideas' | 'scripts' | 'linkedin' | 'research' | 'competitors' | 'reports'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const favoriteIdeas = ideas.filter((i) => i.isFavorite);
@@ -52,6 +52,13 @@ export default function SavedContentPage() {
     (rp) =>
       rp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       rp.observations.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredLinkedIn = (linkedinPosts || []).filter(
+    (lp) =>
+      lp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lp.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lp.currentEditedContent.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleDownloadBackup = () => {
@@ -105,6 +112,7 @@ export default function SavedContentPage() {
           <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1 sm:pb-0">
             {[
               { id: 'all', label: 'All Items' },
+              { id: 'linkedin', label: `LinkedIn (${(linkedinPosts || []).length})` },
               { id: 'ideas', label: `Ideas (${ideas.length})` },
               { id: 'scripts', label: `Scripts (${scripts.length})` },
               { id: 'research', label: `Research (${research.length})` },
@@ -113,7 +121,7 @@ export default function SavedContentPage() {
             ].map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => setActiveCategory(cat.id as 'all' | 'ideas' | 'scripts' | 'research' | 'competitors' | 'reports')}
+                onClick={() => setActiveCategory(cat.id as 'all' | 'ideas' | 'scripts' | 'linkedin' | 'research' | 'competitors' | 'reports')}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer shrink-0 ${
                   activeCategory === cat.id
                     ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-bold'
@@ -244,6 +252,69 @@ export default function SavedContentPage() {
                   </p>
                   <div className="text-[11px] text-neutral-400 pt-1 font-mono">
                     Date: {formatDate(rp.date)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* LINKEDIN POSTS SECTION */}
+        {(activeCategory === 'all' || activeCategory === 'linkedin') && (
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded bg-sky-500/10 text-sky-600 flex items-center justify-center text-xs font-bold">
+                  in
+                </div>
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                  LinkedIn Posts ({filteredLinkedIn.length})
+                </h3>
+              </div>
+              <Link href="/linkedin">
+                <Button variant="ghost" size="sm" className="text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100">
+                  Open Studio <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {filteredLinkedIn.map((post) => (
+                <div
+                  key={post.id}
+                  className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/60 space-y-2 flex flex-col justify-between"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-neutral-900 dark:text-neutral-100 line-clamp-1">{post.title}</span>
+                      <Badge
+                        variant={post.status === 'Ready to Publish' ? 'success' : post.status === 'Published' ? 'secondary' : 'outline'}
+                        className="text-[10px] shrink-0"
+                      >
+                        {post.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium">
+                        {post.niche}
+                      </span>
+                      <span className="text-[10px] text-neutral-400">
+                        {post.postFormat}
+                      </span>
+                    </div>
+                    <p className="text-neutral-600 dark:text-neutral-300 text-[11px] line-clamp-3 leading-relaxed whitespace-pre-line">
+                      {post.currentEditedContent}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-neutral-100 dark:border-neutral-750 flex items-center justify-between text-[11px] text-neutral-400">
+                    <span className="font-mono">Created: {formatDate(post.createdAt)}</span>
+                    <Link
+                      href={`/linkedin?id=${post.id}`}
+                      className="font-semibold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
+                    >
+                      Edit Post <ArrowRight className="w-3 h-3" />
+                    </Link>
                   </div>
                 </div>
               ))}

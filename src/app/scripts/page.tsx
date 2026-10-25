@@ -27,6 +27,7 @@ import {
   AlignLeft,
   X,
 } from 'lucide-react';
+import { ModelSelector } from '@/components/ai/model-selector';
 
 const formatDate = (dateStr?: string) => (dateStr ? dateStr.slice(0, 10) : '');
 
@@ -39,6 +40,7 @@ export default function ScriptStudioPage() {
     styleProfile,
     updateStyleProfile,
     aiConfig,
+    getModelForModule,
   } = useApp();
 
   const [activeScriptId, setActiveScriptId] = useState<string>(
@@ -80,6 +82,7 @@ export default function ScriptStudioPage() {
     if (!activeScript) return;
     setIsRefining(true);
     try {
+      const selectedModel = getModelForModule('scripts');
       const res = await fetch('/api/ai/generate-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,7 +90,11 @@ export default function ScriptStudioPage() {
           action,
           script: activeScript,
           styleProfile,
-          aiConfig,
+          aiConfig: {
+            ...aiConfig,
+            model: selectedModel,
+            omniRouteModel: selectedModel,
+          },
         }),
       });
       const data = await res.json();
@@ -109,6 +116,7 @@ export default function ScriptStudioPage() {
     setIsReviewing(true);
     setReviewFeedback(null);
     try {
+      const selectedModel = getModelForModule('scripts');
       const res = await fetch('/api/ai/review-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,7 +124,11 @@ export default function ScriptStudioPage() {
           scriptText: activeScript.currentSpokenScript,
           title: activeScript.title,
           pillar: activeScript.pillar,
-          aiConfig,
+          aiConfig: {
+            ...aiConfig,
+            model: selectedModel,
+            omniRouteModel: selectedModel,
+          },
         }),
       });
       const data = await res.json();
@@ -259,6 +271,8 @@ export default function ScriptStudioPage() {
               </option>
             ))}
           </select>
+
+          <ModelSelector currentModule="scripts" />
 
           <Button
             onClick={() => setIsDraftsModalOpen(true)}

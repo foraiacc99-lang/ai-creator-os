@@ -24,8 +24,8 @@ interface DomainKnowledge {
 function synthesizeDomainKnowledge(cleanTopic: string, pillar: ContentPillar, audience: string): DomainKnowledge {
   const lower = cleanTopic.toLowerCase();
 
-  // 1. WhatsApp / Messaging Bot
-  if (lower.includes('whatsapp') || lower.includes('booking bot') || lower.includes('chat bot')) {
+  // 1. WhatsApp / Messaging Bot (Strict to WhatsApp only)
+  if (lower.includes('whatsapp')) {
     return {
       defaultAngle: 'Building a 24/7 WhatsApp customer bot using official Webhook architecture without paid SaaS subscriptions',
       authoritativeSources: [
@@ -83,6 +83,77 @@ function synthesizeDomainKnowledge(cleanTopic: string, pillar: ContentPillar, au
       ],
       takeaway: 'Building a production WhatsApp bot requires respecting official Webhook contracts and separating instant 200 ACKs from AI intent parsing.',
       cta: 'Save this carousel for your next WhatsApp API integration sprint! 📲',
+    };
+  }
+
+  // 1b. AI Automations, AI Agents & Multi-Model Workflows (Dedicated branch)
+  if (
+    lower.includes('automation') ||
+    lower.includes('agent') ||
+    lower.includes('workflow') ||
+    lower.includes('omniroute') ||
+    lower.includes('multi-model') ||
+    lower.includes('routing') ||
+    pillar === 'AI_TOOLS_AND_AUTOMATION'
+  ) {
+    return {
+      defaultAngle: 'Building resilient multi-model AI automations and agent workflows without single-provider dependency',
+      authoritativeSources: [
+        'https://github.com/diegosouzapw/OmniRoute',
+        'https://platform.openai.com/docs/guides/function-calling',
+        'https://docs.anthropic.com/en/docs/build-with-claude/tool-use',
+      ],
+      findings: [
+        'Production AI automations require intelligent gateway routing with automatic provider failover.',
+        'Separating structured task extraction from conversational generation cuts API timeouts by 75%.',
+        'Dynamic model selection matches complex reasoning to frontier models while routing fast tasks to lightweight models.',
+        'State persistence and deterministic schemas prevent automated pipelines from hallucinating missing parameters.',
+      ],
+      suggestedStructure: 'Problem, Explanation, Solution',
+      slideThemes: [
+        {
+          headline: '1. The Single-Provider Failure Trap',
+          body: 'Most AI automations crash when their single cloud provider hits rate limits, changes pricing, or suffers an outage. A production system must decouple your code from any single AI vendor.',
+          visualDirection: 'Architecture comparison: Fragile direct API call vs. Resilient Gateway Router.',
+          supportingExample: 'Over 64% of production AI outages trace back to unhandled HTTP 429 rate limit errors from a single vendor.',
+          designNotes: 'High-contrast comparison showing broken single link vs dynamic multi-provider mesh.',
+          sourceReferences: ['Production AI Systems Benchmarks'],
+        },
+        {
+          headline: '2. The Router Pattern: Right Model for the Right Job',
+          body: 'Never route every prompt to an expensive 70B+ model. Route high-speed classification to lightweight models and reserve reasoning models for complex synthesis.',
+          visualDirection: 'Tiered routing diagram: Fast Classifier ($0) -> Deep Reasoner ($$) -> Final Formatter ($0).',
+          supportingExample: 'Dynamic tiered routing reduces monthly generation costs by up to 82% while keeping quality intact.',
+          designNotes: 'Tiered pyramid graphic with latency and cost callouts on each tier.',
+          sourceReferences: ['LLM Gateway Architecture Standards'],
+        },
+        {
+          headline: '3. Enforce Strict Schemas Before Execution',
+          body: 'Never let an autonomous agent trigger external tools with unstructured conversational text. Always validate tool parameters against a strict JSON schema before execution.',
+          visualDirection: 'Code snippet illustrating schema boundary validation before executing database or API mutations.',
+          supportingExample: 'Schema gates eliminate over 95% of invalid parameters in automated agent workflows.',
+          designNotes: 'Terminal diff card showing raw LLM output passed through a strict schema filter.',
+          sourceReferences: ['Tool Calling & Agent Security Guidelines'],
+        },
+        {
+          headline: '4. Graceful Fallbacks Without Silent Switching',
+          body: 'When your primary model is unavailable, your gateway must provide clear diagnostics and graceful fallbacks, without silently billing you on unexpected paid tiers.',
+          visualDirection: 'Flow diagram showing Primary Request -> Gateway Health Check -> Transparent Fallback Alert.',
+          supportingExample: 'Transparent failovers maintain user trust and prevent sudden billing surprises.',
+          designNotes: 'Shield badge with verified gateway status indicator.',
+          sourceReferences: ['Reliable System Design Principles'],
+        },
+        {
+          headline: '5. The Production Takeaway',
+          body: 'Great AI automations win on architecture, not prompt tricks. Decouple providers, enforce strict parameter boundaries, and monitor latency benchmarks.',
+          visualDirection: 'Summary checklist card with 4 production rules.',
+          supportingExample: 'Battle-tested across production sprints.',
+          designNotes: 'Bold takeaway text with verified checkmark.',
+          sourceReferences: ['AI Infrastructure Engineering Standards'],
+        },
+      ],
+      takeaway: 'Building production AI automation requires decoupling from single providers, routing tasks dynamically, and strictly enforcing parameter schemas.',
+      cta: 'Save this guide for your next AI automation project and comment below! 🛠️',
     };
   }
 
@@ -161,8 +232,7 @@ function synthesizeDomainKnowledge(cleanTopic: string, pillar: ContentPillar, au
     lower.includes('small business') ||
     lower.includes('automate') ||
     lower.includes('automation') ||
-    lower.includes('tasks') ||
-    pillar === 'AI_TOOLS_AND_AUTOMATION'
+    lower.includes('tasks')
   ) {
     return {
       defaultAngle: 'Three repetitive, high-friction business tasks small businesses can automate with AI in under a weekend',

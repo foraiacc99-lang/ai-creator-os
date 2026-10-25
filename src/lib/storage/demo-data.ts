@@ -13,6 +13,8 @@ import {
   StorySequence,
   AIProviderConfig,
   GoogleCalendarConfig,
+  LinkedInPostRecord,
+  ModelPreferences,
 } from '@/types';
 
 export const INITIAL_PREFERENCES: UserPreferences = {
@@ -53,10 +55,19 @@ export const INITIAL_AI_CONFIG: AIProviderConfig = {
   endpoint: 'http://localhost:11434',
   textModel: 'llama3.2',
   availableModels: ['llama3.2', 'mistral', 'qwen2.5', 'deepseek-r1:8b'],
+  omniRouteEndpoint: 'http://localhost:20128/v1',
+  omniRouteModel: 'kimi-k1.5',
   localOnlyMode: false,
   isCloudEnabled: false,
+  freeOnlyMode: false,
   temperature: 0.7,
   isConnected: false,
+};
+
+export const INITIAL_MODEL_PREFERENCES: ModelPreferences = {
+  globalDefault: 'kimi-k1.5',
+  moduleOverrides: {},
+  freeOnlyMode: false,
 };
 
 export const INITIAL_GOOGLE_CALENDAR_CONFIG: GoogleCalendarConfig = {
@@ -835,3 +846,123 @@ export const INITIAL_RECOMMENDATIONS: AIRecommendation[] = [
     status: 'suggested',
   },
 ];
+
+export const INITIAL_LINKEDIN_POSTS: LinkedInPostRecord[] = [
+  {
+    id: 'li_post_01',
+    title: "Why Asking 'Do You Like Your Website?' Kills the Cold Call",
+    topic: 'Cold Calling Local Business Owners for Website Audits',
+    niche: 'Sales and cold calling',
+    contentPillar: 'SALES_PSYCHOLOGY_AND_CLIENT_ACQUISITION',
+    targetAudience: 'Agency owners, freelancers, and sales professionals',
+    postObjective: 'Share a lesson',
+    postFormat: 'Personal Learning',
+    writingStyle: 'Professional and conversational',
+    postLength: 'Medium',
+    userNotes: 'Made 25 cold calls last Thursday. Found that owners immediately get defensive when you ask about their site design. Shifting to mobile emergency load speed booked 3 video audits.',
+    generatedContent: `The fastest way to kill a prospecting call with a local business owner is to ask: "Do you like your website?"\n\nEvery single owner says yes.\n\nOf course they do. They either built it themselves, paid a family friend, or spent $2,000 on it five years ago. Asking that question instantly puts them on the defensive.\n\nHere is the pivot that changed our conversations completely:\n\nInstead of asking about design preferences, I started asking about mobile customer behavior during an emergency.\n\n"When someone has a burst pipe at 9 PM on a Sunday and finds your business on Google Maps, can they tap your phone number and connect in under 2 seconds?"\n\nSuddenly the conversation shifts from subjective aesthetics to concrete operational friction.\n\nThree things this reinforced:\n1. Business owners do not care about modern typography. They care about customer calls.\n2. Never critique what someone has already paid for. Highlight what mobile visitors are experiencing right now.\n3. A specific 2-minute video audit highlighting one broken element converts 5x better than pitching a full redesign over the phone.\n\nFocusing on observable customer friction always beats pitching design services.`,
+    currentEditedContent: `The fastest way to kill a prospecting call with a local business owner is to ask: "Do you like your website?"\n\nEvery single owner says yes.\n\nOf course they do. They either built it themselves, paid a family friend, or spent $2,000 on it five years ago. Asking that question instantly puts them on the defensive.\n\nHere is the pivot that changed our conversations completely:\n\nInstead of asking about design preferences, I started asking about mobile customer behavior during an emergency.\n\n"When someone has a burst pipe at 9 PM on a Sunday and finds your business on Google Maps, can they tap your phone number and connect in under 2 seconds?"\n\nSuddenly the conversation shifts from subjective aesthetics to concrete operational friction.\n\nThree things this reinforced:\n1. Business owners do not care about modern typography. They care about customer calls.\n2. Never critique what someone has already paid for. Highlight what mobile visitors are experiencing right now.\n3. A specific 2-minute video audit highlighting one broken element converts 5x better than pitching a full redesign over the phone.\n\nFocusing on observable customer friction always beats pitching design services.`,
+    alternativeVersions: [
+      'Stop asking business owners if they like their website design. Ask them what happens when a mobile customer tries to call them in an emergency.',
+    ],
+    ctaSettings: {
+      type: 'Ask a professional discussion question',
+      customText: 'For agency owners and freelancers: what is the single opening question that has yielded your highest call-to-audit conversion rate?',
+    },
+    status: 'Ready to Publish',
+    plannedDate: '2026-10-23',
+    plannedTime: '09:30',
+    qualityAudit: {
+      overallScore: 95,
+      isAcceptable: true,
+      checks: [
+        { id: 'platform_fit', question: 'Does it sound appropriate for LinkedIn?', passed: true, feedback: 'Professional tone, grounded in real sales execution.' },
+        { id: 'central_idea', question: 'Is the central idea clear?', passed: true, feedback: 'Focuses on the cold call opening question pivot.' },
+        { id: 'natural_human_voice', question: 'Does it sound natural rather than generic AI?', passed: true, feedback: 'Zero fluff or marketing buzzwords.' },
+        { id: 'no_invented_experience', question: 'Has any personal experience been invented?', passed: true, feedback: 'Matches creator call notes accurately.' },
+      ],
+      actionableSuggestions: ['Ready to publish. Matches your authentic sales prospecting voice.'],
+      testedAt: '2026-10-21T10:00:00.000Z',
+    },
+    createdAt: '2026-10-20T14:30:00.000Z',
+    updatedAt: '2026-10-21T09:15:00.000Z',
+  },
+  {
+    id: 'li_post_02',
+    title: 'Testing Baileys: Free Self-Hosted WhatsApp Automation',
+    topic: 'Evaluating Open-Source WhatsApp Automation vs Cloud APIs',
+    niche: 'Open-source AI tools and GitHub repositories',
+    contentPillar: 'FREE_GITHUB_AND_DEV_TOOLS',
+    targetAudience: 'Developers and AI builders',
+    postObjective: 'Share a GitHub repository',
+    postFormat: 'Tool or GitHub Discovery',
+    writingStyle: 'Technical',
+    postLength: 'Medium',
+    userNotes: 'Benchmarked Baileys library against Meta WhatsApp Cloud API. Baileys connects directly via WebSocket without per-message charges, but requires persistent Node.js process and session management.',
+    generatedContent: `If you want to automate WhatsApp notifications for your internal tools, you usually face a dilemma:\n\nPay per-conversation fees on the official Meta Cloud API, or run an open-source WebSocket client directly.\n\nOver the weekend I tested Baileys (the TypeScript WhatsApp Web API library) on a lightweight VPS. Here is an honest technical evaluation:\n\nWhat works exceptionally well:\n- 100% self-hosted: zero per-message fees or credit cards required.\n- Event-driven WebSocket connection: sub-100ms message dispatch latency.\n- Rich message payloads: buttons, lists, and document attachments work cleanly.\n\nWhat you must plan for before using it in production:\n1. Session state persistence: auth credentials must be serialized to disk or Redis. If your Docker container restarts without persistent volumes, you will need to scan the QR code again.\n2. Rate limit discipline: sending unsolicited blast messages will get your number flagged by automated fraud detectors. Use this strictly for transactional internal alerts or opt-in client notifications.\n3. Connection health heartbeats: implement an auto-reconnect handler with exponential backoff for network drops.\n\nFor solo builders running internal operational alerts, it is one of the most reliable free developer tools available.\n\nComment "GITHUB" if you would like the repository link and our Docker Compose setup boilerplate.`,
+    currentEditedContent: `If you want to automate WhatsApp notifications for your internal tools, you usually face a dilemma:\n\nPay per-conversation fees on the official Meta Cloud API, or run an open-source WebSocket client directly.\n\nOver the weekend I tested Baileys (the TypeScript WhatsApp Web API library) on a lightweight VPS. Here is an honest technical evaluation:\n\nWhat works exceptionally well:\n- 100% self-hosted: zero per-message fees or credit cards required.\n- Event-driven WebSocket connection: sub-100ms message dispatch latency.\n- Rich message payloads: buttons, lists, and document attachments work cleanly.\n\nWhat you must plan for before using it in production:\n1. Session state persistence: auth credentials must be serialized to disk or Redis. If your Docker container restarts without persistent volumes, you will need to scan the QR code again.\n2. Rate limit discipline: sending unsolicited blast messages will get your number flagged by automated fraud detectors. Use this strictly for transactional internal alerts or opt-in client notifications.\n3. Connection health heartbeats: implement an auto-reconnect handler with exponential backoff for network drops.\n\nFor solo builders running internal operational alerts, it is one of the most reliable free developer tools available.\n\nComment "GITHUB" if you would like the repository link and our Docker Compose setup boilerplate.`,
+    ctaSettings: {
+      type: 'Offer a resource through comments',
+      resourceKeyword: 'GITHUB',
+      resourceName: 'Baileys Docker Compose Setup Boilerplate',
+      resourceReady: true,
+    },
+    isResearchEnabled: true,
+    researchSources: [
+      {
+        title: 'Baileys GitHub Repository',
+        url: 'https://github.com/WhiskeySockets/Baileys',
+        sourceName: 'GitHub Official Repository',
+        confidenceStatus: 'Verified Fact',
+      },
+    ],
+    status: 'Ready to Publish',
+    plannedDate: '2026-10-24',
+    plannedTime: '11:00',
+    createdAt: '2026-10-20T16:00:00.000Z',
+    updatedAt: '2026-10-21T08:00:00.000Z',
+  },
+  {
+    id: 'li_post_03',
+    title: 'Why Our Voice Agent Kept Talking Over Users (And the 200ms VAD Fix)',
+    topic: 'Fixing Voice Activity Detection Latency in AI Voice Workflows',
+    niche: 'AI tools and automation',
+    contentPillar: 'AI_TOOLS_AND_AUTOMATION',
+    targetAudience: 'Developers, founders, and AI engineers',
+    postObjective: 'Share a technical explanation',
+    postFormat: 'Educational Post',
+    writingStyle: 'Technical',
+    postLength: 'Medium',
+    userNotes: 'Tested local voice pipeline with Silero VAD. Users would pause to think for 150ms and the bot would cut in prematurely. Tuning debounce to 350ms fixed conversational flow.',
+    generatedContent: `The hardest part of building real-time voice agents is not the LLM or the text-to-speech model.\n\nIt is knowing exactly when a human has finished speaking.\n\nIn our initial voice automation tests, the bot constantly talked over users. A user would say "I need to check my appointment for..." take a natural 150ms breath, and the agent would immediately interrupt with an answer.\n\nHere is how we fixed the conversational pacing:\n\n1. Voice Activity Detection (VAD) Debounce: We raised the silence threshold from 120ms to 350ms using Silero VAD. This allows natural human breath pauses without prematurely triggering inference.\n2. Audio Stream Interruption (Barge-In): We mapped a strict cancellation signal that cuts the TTS audio buffer the millisecond new user vocal energy is detected above the baseline threshold.\n3. Latency Budgeting: Keeping total roundtrip latency under 650ms (ASR + LLM first token + TTS chunking) prevents awkward pregnant pauses.\n\nReal-time voice feels magical when the conversational physics are right. Getting there is almost entirely an exercise in audio buffering and debounce tuning.`,
+    currentEditedContent: `The hardest part of building real-time voice agents is not the LLM or the text-to-speech model.\n\nIt is knowing exactly when a human has finished speaking.\n\nIn our initial voice automation tests, the bot constantly talked over users. A user would say "I need to check my appointment for..." take a natural 150ms breath, and the agent would immediately interrupt with an answer.\n\nHere is how we fixed the conversational pacing:\n\n1. Voice Activity Detection (VAD) Debounce: We raised the silence threshold from 120ms to 350ms using Silero VAD. This allows natural human breath pauses without prematurely triggering inference.\n2. Audio Stream Interruption (Barge-In): We mapped a strict cancellation signal that cuts the TTS audio buffer the millisecond new user vocal energy is detected above the baseline threshold.\n3. Latency Budgeting: Keeping total roundtrip latency under 650ms (ASR + LLM first token + TTS chunking) prevents awkward pregnant pauses.\n\nReal-time voice feels magical when the conversational physics are right. Getting there is almost entirely an exercise in audio buffering and debounce tuning.`,
+    ctaSettings: {
+      type: 'No CTA',
+    },
+    status: 'Draft',
+    createdAt: '2026-10-21T11:00:00.000Z',
+    updatedAt: '2026-10-21T11:30:00.000Z',
+  },
+  {
+    id: 'li_post_04',
+    title: 'Rebuilding Our Internal Dashboard in Next.js: 3 Build Lessons',
+    topic: 'Architecture Lessons Building Solo Creator Tooling',
+    niche: 'Build in public',
+    contentPillar: 'BUILD_IN_PUBLIC_AND_JOURNEY',
+    targetAudience: 'Solo developers and builders',
+    postObjective: 'Document a project update',
+    postFormat: 'Build in Public',
+    writingStyle: 'Personal and reflective',
+    postLength: 'Short',
+    userNotes: 'Sprint notes rebuilding our creator workspace. Kept persistence in localized localStorage with Supabase sync. Stopped over-engineering global state.',
+    generatedContent: `Three lessons learned from rebuilding our internal creator tooling this week:\n\n1. Local persistence beats premature backend schemas. Starting with validated client-side storage allowed us to iterate on data models 5x faster before locking in database tables.\n\n2. Avoid wrapper libraries for features the framework already handles natively. Removing unnecessary dependencies eliminated 4 build-time hydration mismatches.\n\n3. Write tools you actually open every single morning. If you do not use your own internal dashboard daily, you will never catch the micro-friction points that frustrate real users.\n\nBuilding simple, self-contained systems keeps maintenance debt near zero.`,
+    currentEditedContent: `Three lessons learned from rebuilding our internal creator tooling this week:\n\n1. Local persistence beats premature backend schemas. Starting with validated client-side storage allowed us to iterate on data models 5x faster before locking in database tables.\n\n2. Avoid wrapper libraries for features the framework already handles natively. Removing unnecessary dependencies eliminated 4 build-time hydration mismatches.\n\n3. Write tools you actually open every single morning. If you do not use your own internal dashboard daily, you will never catch the micro-friction points that frustrate real users.\n\nBuilding simple, self-contained systems keeps maintenance debt near zero.`,
+    ctaSettings: {
+      type: 'Invite relevant connections',
+    },
+    status: 'Idea',
+    createdAt: '2026-10-21T12:00:00.000Z',
+    updatedAt: '2026-10-21T12:00:00.000Z',
+  },
+];
+

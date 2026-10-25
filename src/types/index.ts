@@ -73,7 +73,7 @@ export const CONTENT_PILLARS: PillarMetadata[] = [
   },
 ];
 
-export type ContentFormat = 'REELS' | 'CAROUSEL' | 'STORY' | 'SHORT_VIDEO' | 'POST';
+export type ContentFormat = 'REELS' | 'CAROUSEL' | 'STORY' | 'SHORT_VIDEO' | 'POST' | 'LINKEDIN';
 
 export type IdeaStatus =
   | 'Inbox'
@@ -373,6 +373,7 @@ export interface CalendarEntry {
   status: IdeaStatus;
   scriptId?: string;
   ideaId?: string;
+  linkedInPostId?: string;
   notes?: string;
   googleCalendarEventId?: string;
   isSyncedToGoogle?: boolean;
@@ -431,7 +432,7 @@ export interface AIRecommendation {
 }
 
 export interface AIProviderConfig {
-  provider: 'ollama' | 'groq' | 'openrouter';
+  provider: 'ollama' | 'groq' | 'openrouter' | 'omniroute';
   // Ollama
   endpoint: string;
   textModel: string;
@@ -442,9 +443,14 @@ export interface AIProviderConfig {
   // OpenRouter
   openRouterApiKey?: string;
   openRouterModel?: string;
+  // OmniRoute
+  omniRouteEndpoint?: string;
+  omniRouteApiKey?: string;
+  omniRouteModel?: string;
   // Safety controls
   localOnlyMode: boolean;
   isCloudEnabled: boolean;
+  freeOnlyMode?: boolean;
   temperature: number;
   isConnected: boolean;
   statusMessage?: string;
@@ -498,4 +504,230 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   suggestedActions?: ChatMessageAction[];
+}
+
+export type LinkedInNiche =
+  | 'AI tools and automation'
+  | 'AI agents and workflows'
+  | 'Open-source AI tools and GitHub repositories'
+  | 'Sales and cold calling'
+  | 'Sales psychology and objection handling'
+  | 'Website development'
+  | 'SEO and local SEO'
+  | 'Building projects and business systems'
+  | 'Build in public'
+  | 'Coding and programming'
+  | 'Personal learning and professional growth'
+  | 'Custom niche';
+
+export type LinkedInAudience =
+  | 'Founders'
+  | 'Business owners'
+  | 'Developers'
+  | 'AI enthusiasts'
+  | 'Freelancers'
+  | 'Agency owners'
+  | 'Sales professionals'
+  | 'Students and beginners'
+  | 'General professional audience'
+  | 'Custom audience';
+
+export type LinkedInObjective =
+  | 'Auto-select'
+  | 'Share a lesson'
+  | 'Teach something useful'
+  | 'Share a real personal experience'
+  | 'Introduce an AI tool'
+  | 'Share a GitHub repository'
+  | 'Document a project update'
+  | 'Explain a sales or business insight'
+  | 'Share a technical explanation'
+  | 'Start a professional discussion'
+  | 'Build professional credibility'
+  | 'Attract relevant professional connections'
+  | 'Promote a service naturally'
+  | 'Share an industry observation';
+
+export type LinkedInFormatType =
+  | 'Auto-select'
+  | 'Professional Insight'
+  | 'Personal Learning'
+  | 'Build in Public'
+  | 'Educational Post'
+  | 'Tool or GitHub Discovery'
+  | 'Case Study or Experiment'
+  | 'Professional Storytelling'
+  | 'Opinion or Discussion'
+  | 'Service-Related Post'
+  | 'Custom Format';
+
+export type LinkedInLength = 'Auto-select' | 'Short' | 'Medium' | 'Long';
+
+export type LinkedInStyle =
+  | 'Professional and conversational'
+  | 'Educational'
+  | 'Personal and reflective'
+  | 'Technical'
+  | 'Storytelling'
+  | 'Opinion-driven'
+  | 'Custom style';
+
+export type LinkedInCTAType =
+  | 'Auto-select CTA'
+  | 'Ask a professional discussion question'
+  | 'Offer a resource through comments'
+  | 'Invite relevant connections'
+  | 'No CTA';
+
+export interface LinkedInCTASettings {
+  type: LinkedInCTAType;
+  customText?: string;
+  resourceKeyword?: string;
+  resourceName?: string;
+  resourceReady?: boolean;
+}
+
+export interface LinkedInQualityCheckItem {
+  id: string;
+  question: string;
+  passed: boolean;
+  feedback: string;
+}
+
+export interface LinkedInQualityAudit {
+  overallScore: number;
+  isAcceptable: boolean;
+  checks: LinkedInQualityCheckItem[];
+  actionableSuggestions: string[];
+  testedAt: string;
+}
+
+export interface LinkedInResearchSource {
+  title: string;
+  url: string;
+  sourceName?: string;
+  snippet?: string;
+  confidenceStatus?: string;
+}
+
+export interface LinkedInPostRecord {
+  id: string;
+  title: string;
+  topic: string;
+  niche: string;
+  contentPillar: ContentPillar;
+  targetAudience: string;
+  customAudience?: string;
+  postObjective: LinkedInObjective;
+  postFormat: LinkedInFormatType;
+  customFormatDescription?: string;
+  writingStyle: LinkedInStyle;
+  customStyleDescription?: string;
+  postLength: LinkedInLength;
+  userNotes?: string;
+  generatedContent: string;
+  currentEditedContent: string;
+  alternativeVersions?: string[];
+  ctaSettings: LinkedInCTASettings;
+  isResearchEnabled?: boolean;
+  researchSummary?: string;
+  researchSources?: LinkedInResearchSource[];
+  sourceReference?: {
+    type: 'script' | 'idea' | 'research' | 'report' | 'scratch';
+    id: string;
+    title: string;
+  };
+  status: 'Idea' | 'Draft' | 'Ready to Publish' | 'Published';
+  plannedDate?: string;
+  plannedTime?: string;
+  calendarEntryId?: string;
+  qualityAudit?: LinkedInQualityAudit;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================================================
+// OMNIROUTE & DYNAMIC MODEL CATALOG TYPES
+// ============================================================================
+
+export type ModelProviderCategory =
+  | 'Kimi / Moonshot'
+  | 'GLM / Zhipu'
+  | 'Anthropic'
+  | 'OpenAI'
+  | 'Google Gemini'
+  | 'DeepSeek'
+  | 'Meta Llama'
+  | 'Qwen / Alibaba'
+  | 'Mistral'
+  | 'Ollama'
+  | 'Other / Routed';
+
+export type ModelPricingTier = 'free' | 'low_cost' | 'paid' | 'unknown';
+
+export interface ModelPricingInfo {
+  tier: ModelPricingTier;
+  inputPer1k?: number;
+  outputPer1k?: number;
+  isVerifiedFree: boolean;
+  notes?: string;
+}
+
+export interface ModelCapabilities {
+  chat: boolean;
+  vision?: boolean;
+  reasoning?: boolean;
+  code?: boolean;
+  contextWindow?: number;
+}
+
+export interface OmniRouteModel {
+  id: string;
+  name: string;
+  provider: ModelProviderCategory;
+  rawProvider?: string;
+  description?: string;
+  capabilities: ModelCapabilities;
+  pricing: ModelPricingInfo;
+  isAvailable: boolean;
+  statusNotes?: string;
+}
+
+export type ModelModule =
+  | 'chat'
+  | 'scripts'
+  | 'ideas'
+  | 'carousel'
+  | 'linkedin'
+  | 'strategist'
+  | 'competitor';
+
+export interface ModelPreferences {
+  globalDefault: string;
+  moduleOverrides: Partial<Record<ModelModule, string>>;
+  freeOnlyMode: boolean;
+}
+
+export interface ModelTestResult {
+  modelId: string;
+  success: boolean;
+  latencyMs: number;
+  outputPreview?: string;
+  tokenUsage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+  errorMessage?: string;
+  testedAt: string;
+}
+
+export interface ModelRecommendation {
+  task: ModelModule;
+  recommendedModelId: string;
+  modelName: string;
+  provider: ModelProviderCategory;
+  rationale: string;
+  pricingTier: ModelPricingTier;
+  confidenceScore: number;
 }

@@ -30,6 +30,7 @@ import {
   Layers,
   BookOpen,
 } from 'lucide-react';
+import { ModelSelector } from '@/components/ai/model-selector';
 
 const STATUS_OPTIONS: IdeaStatus[] = [
   'Inbox',
@@ -62,6 +63,7 @@ export default function IdeasPage() {
     checkDuplicateIdea,
     preferences,
     aiConfig,
+    getModelForModule,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -210,6 +212,7 @@ export default function IdeasPage() {
     e.preventDefault();
     setIsGenerating(true);
     try {
+      const selectedModel = getModelForModule('ideas');
       const res = await fetch('/api/ai/generate-ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -220,7 +223,11 @@ export default function IdeasPage() {
           targetAudience: preferences.targetAudience,
           tone: preferences.preferredTone,
           count: 3,
-          aiConfig,
+          aiConfig: {
+            ...aiConfig,
+            model: selectedModel,
+            omniRouteModel: selectedModel,
+          },
         }),
       });
       const data = await res.json();
@@ -347,6 +354,7 @@ export default function IdeasPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <ModelSelector currentModule="ideas" />
           <Button
             onClick={() => setGenerateModalOpen(true)}
             variant="outline"

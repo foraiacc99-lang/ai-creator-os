@@ -27,7 +27,14 @@ import {
   X,
   Sparkles,
   Info,
+  Layers,
+  Zap,
+  Activity,
+  Terminal,
+  Play,
+  RotateCcw,
 } from 'lucide-react';
+import { OmniRouteModel, ModelModule } from '@/types';
 
 export default function SettingsPage() {
   const {
@@ -36,6 +43,15 @@ export default function SettingsPage() {
     aiConfig,
     updateAIConfig,
     testAIConnection,
+    modelPreferences,
+    cachedModels,
+    isModelsLoading,
+    modelsError,
+    fetchOmniRouteModels,
+    updateModelPreferences,
+    getModelForModule,
+    setModelForModule,
+    resetModelPreferences,
     googleCalendar,
     updateGoogleCalendarConfig,
     disconnectGoogleCalendar,
@@ -94,8 +110,24 @@ export default function SettingsPage() {
   const [groqModel, setGroqModel] = useState(aiConfig.groqModel || 'llama-3.3-70b-versatile');
   const [openRouterApiKey, setOpenRouterApiKey] = useState(aiConfig.openRouterApiKey || '');
   const [openRouterModel, setOpenRouterModel] = useState(aiConfig.openRouterModel || 'meta-llama/llama-3.2-3b-instruct:free');
+
+  // OmniRoute & Multi-Model State
+  const [omniRouteEndpoint, setOmniRouteEndpoint] = useState(aiConfig.omniRouteEndpoint || 'http://localhost:20128/v1');
+  const [omniRouteApiKey, setOmniRouteApiKey] = useState(aiConfig.omniRouteApiKey || '');
+  const [omniRouteModel, setOmniRouteModel] = useState(aiConfig.omniRouteModel || 'kimi-k1.5');
+  const [freeOnlyMode, setFreeOnlyMode] = useState(aiConfig.freeOnlyMode || false);
+  const [modelCatalogSearch, setModelCatalogSearch] = useState('');
+  const [testingSingleModel, setTestingSingleModel] = useState(false);
+  const [singleModelTestResult, setSingleModelTestResult] = useState<{
+    success: boolean;
+    latencyMs?: number;
+    message?: string;
+    preview?: string;
+    tokensUsed?: number;
+  } | null>(null);
+
   const [testingAi, setTestingAi] = useState(false);
-  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string; models?: string[] } | null>(null);
+  const [aiTestResult, setAiTestResult] = useState<{ success: boolean; message: string; models?: string[]; latencyMs?: number } | null>(null);
 
   // Research Form
   const [githubToken, setGithubToken] = useState(preferences.githubToken || '');
@@ -157,6 +189,10 @@ export default function SettingsPage() {
       groqModel,
       openRouterApiKey,
       openRouterModel,
+      omniRouteEndpoint,
+      omniRouteApiKey,
+      omniRouteModel,
+      freeOnlyMode,
     });
     triggerSaved();
   };
@@ -165,9 +201,54 @@ export default function SettingsPage() {
   const handleTestAI = async () => {
     setTestingAi(true);
     setAiTestResult(null);
-    const res = await testAIConnection();
+    const res = await testAIConnection({
+      provider: aiProvider,
+      endpoint,
+      textModel,
+      localOnlyMode,
+      isCloudEnabled,
+      groqApiKey,
+      groqModel,
+      openRouterApiKey,
+      openRouterModel,
+      omniRouteEndpoint,
+      omniRouteApiKey,
+      omniRouteModel,
+      freeOnlyMode,
+    });
     setAiTestResult(res);
+    if (aiProvider === 'omniroute' && res.success) {
+      await fetchOmniRouteModels(true);
+    }
     setTestingAi(false);
+  };
+
+  // Run in-line test for an individual model
+  const handleRunModelTest = async (modelIdToTest: string) => {
+    if (!modelIdToTest) return;
+    setTestingSingleModel(true);
+    setSingleModelTestResult(null);
+    try {
+      const res = await fetch('/api/ai/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: omniRouteEndpoint,
+          apiKey: omniRouteApiKey,
+          modelId: modelIdToTest,
+        }),
+      });
+      const data = await res.json();
+      setSingleModelTestResult(data);
+    } catch (e: unknown) {
+      const err = e as Error;
+      setSingleModelTestResult({
+        success: false,
+        message: err.message || 'Model test request failed.',
+      });
+    } finally {
+      setTestingSingleModel(false);
+    }
   };
 
   // Save Research
@@ -690,8 +771,14 @@ export default function SettingsPage() {
             )}
 
             {/* Provider Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {[
+                {
+                  id: 'omniroute',
+                  title: 'OmniRoute Gateway',
+                  badge: 'Multi-Model Router',
+                  desc: 'Unified local gateway routing to Kimi, GLM, Claude, GPT, Gemini, and custom providers via http://localhost:20128/v1.',
+                },
                 {
                   id: 'ollama',
                   title: 'Ollama (Local Offline)',
@@ -707,7 +794,7 @@ export default function SettingsPage() {
                 {
                   id: 'openrouter',
                   title: 'OpenRouter (Optional)',
-                  badge: 'Multi-Model Router',
+                  badge: 'Cloud Router',
                   desc: 'Access hundreds of open and commercial models. Free tier models clearly filtered. Requires user API key.',
                 },
               ].map((p) => {
@@ -715,7 +802,7 @@ export default function SettingsPage() {
                 return (
                   <div
                     key={p.id}
-                    onClick={() => setAiProvider(p.id as 'ollama' | 'groq' | 'openrouter')}
+                    onClick={() => setAiProvider(p.id as 'ollama' | 'groq' | 'openrouter' | 'omniroute')}
                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
                       isSelected
                         ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-800/80 ring-1 ring-neutral-900 dark:ring-neutral-100'
@@ -723,8 +810,8 @@ export default function SettingsPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">{p.title}</span>
-                      <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">{p.badge}</span>
+                      <span className="font-bold text-neutral-900 dark:text-neutral-100 text-xs">{p.title}</span>
+                      <span className="text-[9px] font-semibold text-neutral-500 dark:text-neutral-400 bg-neutral-200/60 dark:bg-neutral-800 px-1.5 py-0.5 rounded">{p.badge}</span>
                     </div>
                     <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">{p.desc}</p>
                   </div>
@@ -732,13 +819,389 @@ export default function SettingsPage() {
               })}
             </div>
 
+            {/* OmniRoute Dedicated Configuration Panel */}
+            <div className={`p-5 rounded-2xl border space-y-4 transition-all ${
+              aiProvider === 'omniroute'
+                ? 'bg-neutral-50/80 dark:bg-neutral-800/40 border-neutral-300 dark:border-neutral-700'
+                : 'bg-neutral-50/30 dark:bg-neutral-900/40 border-neutral-200 dark:border-neutral-800 opacity-90'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200/70 dark:border-neutral-800 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-neutral-900 dark:text-neutral-100" />
+                    <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
+                      OmniRoute Gateway Configuration
+                    </h3>
+                    <Badge variant="purple" className="text-[10px] font-mono">
+                      Dynamic Discovery
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Connect to your running OmniRoute instance to access multi-model routing across Kimi, GLM, Anthropic, OpenAI, Google, and more.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => fetchOmniRouteModels(true)}
+                    variant="outline"
+                    size="sm"
+                    isLoading={isModelsLoading}
+                    className="text-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                    Refresh Catalog ({cachedModels.length})
+                  </Button>
+                </div>
+              </div>
+
+              {/* Gateway Inputs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    OmniRoute Gateway Base URL
+                  </label>
+                  <input
+                    type="text"
+                    value={omniRouteEndpoint}
+                    onChange={(e) => setOmniRouteEndpoint(e.target.value)}
+                    placeholder="http://localhost:20128/v1"
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg font-mono text-xs"
+                  />
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1 block">
+                    Default port is 20128. Format: http://localhost:20128/v1 (or remote trusted proxy).
+                  </span>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
+                    Gateway Bearer Token (Optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={omniRouteApiKey}
+                    onChange={(e) => setOmniRouteApiKey(e.target.value)}
+                    placeholder="Optional Authorization token"
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg font-mono text-xs"
+                  />
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1 block">
+                    Kept server-side only; never leaked into client bundles.
+                  </span>
+                </div>
+              </div>
+
+              {/* Gateway Quick Setup Note */}
+              <div className="bg-neutral-900 text-neutral-200 dark:bg-neutral-950 p-3.5 rounded-xl text-[11px] font-mono space-y-1.5 border border-neutral-800">
+                <div className="flex items-center justify-between text-neutral-400 text-[10px]">
+                  <span className="flex items-center gap-1.5">
+                    <Terminal className="w-3.5 h-3.5" />
+                    HOW TO RUN OMNIROUTE (OFFICIAL GITHUB)
+                  </span>
+                  <a
+                    href="https://github.com/diegosouzapw/OmniRoute"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-white flex items-center gap-1"
+                  >
+                    Repository <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <div className="text-emerald-400"># Run gateway directly with npx:</div>
+                <div className="text-neutral-100 select-all font-semibold">npx omniroute@latest</div>
+                <div className="text-neutral-400 text-[10px] pt-1">
+                  Configure your provider API keys (Kimi, Anthropic, GLM, etc.) in OmniRoute&apos;s config. OmniRoute will expose them via GET /v1/models and POST /v1/chat/completions.
+                </div>
+              </div>
+
+              {modelsError && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
+                  <div>
+                    <span className="font-semibold">Gateway connection status: </span>
+                    {modelsError}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Free and Low-Cost Mode Toggle */}
+            <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-900/50 rounded-xl flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-bold text-neutral-900 dark:text-neutral-100 text-xs">
+                    Free & Low-Cost Filtering Mode
+                  </span>
+                  <Badge variant="success" className="text-[10px]">Budget Protection</Badge>
+                </div>
+                <p className="text-[11px] text-neutral-600 dark:text-neutral-400 max-w-2xl leading-relaxed">
+                  When enabled, the model selector filters out expensive models and prioritizes verified free or budget-tier models. If pricing cannot be reliably verified from provider metadata, it is labeled as <strong>unknown</strong> rather than falsely assumed to be free.
+                </p>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={freeOnlyMode}
+                onChange={(e) => setFreeOnlyMode(e.target.checked)}
+                className="w-4 h-4 mt-1 rounded text-neutral-900 dark:text-neutral-100"
+              />
+            </div>
+
+            {/* Multi-Model Preferences & Routing Matrix */}
+            <div className="p-5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-neutral-900 dark:text-neutral-100" />
+                    <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
+                      Model Preferences & Module Routing Matrix
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    Assign different models to different tasks (e.g. Claude for scripts, Kimi for brainstorming, GLM for carousel). Module preferences override the global default model.
+                  </p>
+                </div>
+
+                <Button
+                  onClick={resetModelPreferences}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs text-neutral-600 hover:text-neutral-900"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                  Reset All to Global
+                </Button>
+              </div>
+
+              {/* Global Default Model */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3.5 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200/80 dark:border-neutral-800">
+                <div>
+                  <label className="font-semibold text-neutral-800 dark:text-neutral-200 block mb-1 text-xs">
+                    Global Default Model
+                  </label>
+                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Used across all modules unless an explicit per-module override is set below.
+                  </p>
+                </div>
+                <div>
+                  <select
+                    value={modelPreferences.globalDefault || 'kimi-k1.5'}
+                    onChange={(e) => updateModelPreferences({ globalDefault: e.target.value })}
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg text-xs font-mono"
+                  >
+                    {cachedModels.length > 0 ? (
+                      cachedModels.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name || m.id} ({m.provider}) {m.pricing.tier === 'free' ? '• [Free]' : ''}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="kimi-k1.5">kimi-k1.5 (Kimi / Moonshot)</option>
+                        <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet (Anthropic)</option>
+                        <option value="gpt-4o">gpt-4o (OpenAI)</option>
+                        <option value="gemini-2.0-flash">gemini-2.0-flash (Google)</option>
+                        <option value="glm-4-plus">glm-4-plus (GLM / Zhipu)</option>
+                        <option value="deepseek-chat">deepseek-chat (DeepSeek)</option>
+                        <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Llama)</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+              </div>
+
+              {/* Per-Module Routing Table */}
+              <div className="border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/70 border-b border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 font-semibold text-[11px]">
+                    <tr>
+                      <th className="py-2.5 px-3">Module</th>
+                      <th className="py-2.5 px-3">Active Model</th>
+                      <th className="py-2.5 px-3">Specific Model Override</th>
+                      <th className="py-2.5 px-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                    {[
+                      { id: 'chat' as ModelModule, name: 'AI Chat', desc: 'Interactive chat & brainstorming' },
+                      { id: 'scripts' as ModelModule, name: 'Script Studio', desc: 'Short-form Reels & YouTube video scripts' },
+                      { id: 'ideas' as ModelModule, name: 'Content Ideas', desc: 'Hook discovery & concept generation' },
+                      { id: 'carousel' as ModelModule, name: 'Carousel Studio', desc: 'Multi-slide visual educational breakdowns' },
+                      { id: 'linkedin' as ModelModule, name: 'LinkedIn Post Studio', desc: 'Professional insights & text posts' },
+                      { id: 'strategist' as ModelModule, name: 'AI Strategist', desc: 'Empirical pillar synthesis & calendar planning' },
+                      { id: 'competitor' as ModelModule, name: 'Competitor Research', desc: 'Public content breakdown & gap analysis' },
+                    ].map((mod) => {
+                      const activeModel = getModelForModule(mod.id);
+                      const hasOverride = !!modelPreferences.moduleOverrides?.[mod.id];
+                      return (
+                        <tr key={mod.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30">
+                          <td className="py-2.5 px-3">
+                            <div className="font-semibold text-neutral-900 dark:text-neutral-100">{mod.name}</div>
+                            <div className="text-[10px] text-neutral-400">{mod.desc}</div>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+                              {activeModel}
+                            </span>
+                            {hasOverride ? (
+                              <span className="ml-1.5 text-[9px] text-purple-600 dark:text-purple-400 font-semibold uppercase">
+                                Override
+                              </span>
+                            ) : (
+                              <span className="ml-1.5 text-[9px] text-neutral-400">
+                                (Global)
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <select
+                              value={modelPreferences.moduleOverrides?.[mod.id] || ''}
+                              onChange={(e) => setModelForModule(mod.id, e.target.value)}
+                              className="px-2.5 py-1.5 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg text-xs font-mono w-full max-w-xs"
+                            >
+                              <option value="">— Use Global Default —</option>
+                              {cachedModels.length > 0 ? (
+                                cachedModels.map((m) => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name || m.id} ({m.provider})
+                                  </option>
+                                ))
+                              ) : (
+                                <>
+                                  <option value="kimi-k1.5">kimi-k1.5 (Kimi / Moonshot)</option>
+                                  <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet (Anthropic)</option>
+                                  <option value="gpt-4o">gpt-4o (OpenAI)</option>
+                                  <option value="gemini-2.0-flash">gemini-2.0-flash (Google)</option>
+                                  <option value="glm-4-plus">glm-4-plus (GLM / Zhipu)</option>
+                                  <option value="deepseek-chat">deepseek-chat (DeepSeek)</option>
+                                  <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (Llama)</option>
+                                </>
+                              )}
+                            </select>
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
+                            {hasOverride && (
+                              <button
+                                type="button"
+                                onClick={() => setModelForModule(mod.id, '')}
+                                className="text-[11px] text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Model Catalog & Single-Model Test Console */}
+            {cachedModels.length > 0 && (
+              <div className="p-5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-neutral-900 dark:text-neutral-100" />
+                      <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
+                        Discovered Gateway Models ({cachedModels.length}) & Live Tester
+                      </h3>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      Verify individual model availability, latency, and sample completions directly without opening each studio.
+                    </p>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={modelCatalogSearch}
+                    onChange={(e) => setModelCatalogSearch(e.target.value)}
+                    placeholder="Search discovered models..."
+                    className="px-3 py-1.5 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg text-xs w-56"
+                  />
+                </div>
+
+                {singleModelTestResult && (
+                  <div
+                    className={`p-3.5 rounded-xl border text-xs space-y-1 ${
+                      singleModelTestResult.success
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                        : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between font-semibold">
+                      <span>{singleModelTestResult.success ? 'Model Test Passed' : 'Model Test Failed'}</span>
+                      {singleModelTestResult.latencyMs && (
+                        <span className="font-mono text-[10px]">{singleModelTestResult.latencyMs} ms latency</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] opacity-90">{singleModelTestResult.message}</p>
+                    {singleModelTestResult.preview && (
+                      <div className="bg-white/60 dark:bg-black/40 p-2 rounded text-[11px] font-mono mt-1">
+                        &ldquo;{singleModelTestResult.preview}&rdquo;
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                  {cachedModels
+                    .filter((m) =>
+                      m.id.toLowerCase().includes(modelCatalogSearch.toLowerCase()) ||
+                      m.provider.toLowerCase().includes(modelCatalogSearch.toLowerCase())
+                    )
+                    .map((m) => (
+                      <div
+                        key={m.id}
+                        className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-neutral-900 dark:text-neutral-100 truncate">
+                              {m.id}
+                            </span>
+                            <Badge variant="purple" className="text-[9px] uppercase">
+                              {m.provider}
+                            </Badge>
+                            {m.pricing.tier === 'free' && (
+                              <Badge variant="success" className="text-[9px]">Free</Badge>
+                            )}
+                            {m.pricing.tier === 'low_cost' && (
+                              <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                Low Cost
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-neutral-400 mt-0.5">
+                            Capabilities: {Object.entries(m.capabilities).filter(([, v]) => v).map(([k]) => k).join(', ') || 'chat'}
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={() => handleRunModelTest(m.id)}
+                          variant="outline"
+                          size="sm"
+                          isLoading={testingSingleModel}
+                          className="text-[11px] shrink-0"
+                        >
+                          <Play className="w-3 h-3 mr-1" />
+                          Test
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
             {/* Safety Switches */}
             <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="font-bold text-neutral-900 dark:text-neutral-100 block">Strict Local-Only Mode</span>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Hard blocks all outbound cloud AI calls. Only local Ollama can be queried.
+                    Hard blocks all outbound cloud AI calls. Only local Ollama or local OmniRoute can be queried.
                   </p>
                 </div>
                 <input
