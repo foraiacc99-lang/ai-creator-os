@@ -44,16 +44,23 @@ export default function GrowthTrackerPage() {
   const [editingSnapId, setEditingSnapId] = useState<string | null>(null);
 
   // Form State
-  const [date, setDate] = useState('2026-10-14');
-  const [totalFollowers, setTotalFollowers] = useState<number>(5200);
-  const [reach, setReach] = useState<number>(42000);
-  const [totalViews, setTotalViews] = useState<number>(65000);
-  const [engagementRate, setEngagementRate] = useState<number>(6.8);
+  const [date, setDate] = useState('2026-10-25');
+  const [totalFollowers, setTotalFollowers] = useState<number>(76);
+  const [reach, setReach] = useState<number>(1579);
+  const [totalViews, setTotalViews] = useState<number>(2420);
+  const [engagementRate, setEngagementRate] = useState<number>(5.57);
+  const [nonFollowerReachPercent, setNonFollowerReachPercent] = useState<number>(61);
+  const [totalInteractions, setTotalInteractions] = useState<number>(88);
+  const [nonFollowerInteractionRate, setNonFollowerInteractionRate] = useState<number>(25);
+  const [accountsEngaged, setAccountsEngaged] = useState<number>(28);
+  const [profileActivity, setProfileActivity] = useState<number>(45);
   const [notes, setNotes] = useState('');
-  const [reportingPeriod, setReportingPeriod] = useState('Weekly');
+  const [reportingPeriod, setReportingPeriod] = useState('Monthly');
 
-  const latestSnapshot = snapshots[0] || null;
-  const prevSnapshot = snapshots[1] || null;
+  // Sorted latest snapshots
+  const sortedSnapshots = [...snapshots].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const latestSnapshot = sortedSnapshots[0] || null;
+  const prevSnapshot = sortedSnapshots[1] || null;
 
   // Chart telemetry data (chronological ascending)
   const chartData = [...snapshots]
@@ -74,6 +81,12 @@ export default function GrowthTrackerPage() {
       setReach(latestSnapshot.reach);
       setTotalViews(latestSnapshot.totalViews);
       setEngagementRate(latestSnapshot.engagementRate);
+      setNonFollowerReachPercent(latestSnapshot.nonFollowerReachPercent ?? 61);
+      setTotalInteractions(latestSnapshot.totalInteractions ?? 88);
+      setNonFollowerInteractionRate(latestSnapshot.nonFollowerInteractionRate ?? 25);
+      setAccountsEngaged(latestSnapshot.accountsEngaged ?? 28);
+      setProfileActivity(latestSnapshot.profileActivity ?? 45);
+      setReportingPeriod(latestSnapshot.reportingPeriod || 'Monthly');
     }
     setNotes('');
     setModalOpen(true);
@@ -86,34 +99,38 @@ export default function GrowthTrackerPage() {
     setReach(snap.reach);
     setTotalViews(snap.totalViews);
     setEngagementRate(snap.engagementRate);
+    setNonFollowerReachPercent(snap.nonFollowerReachPercent ?? 61);
+    setTotalInteractions(snap.totalInteractions ?? 88);
+    setNonFollowerInteractionRate(snap.nonFollowerInteractionRate ?? 25);
+    setAccountsEngaged(snap.accountsEngaged ?? 28);
+    setProfileActivity(snap.profileActivity ?? 45);
     setNotes(snap.notes || '');
-    setReportingPeriod(snap.reportingPeriod || 'Weekly');
+    setReportingPeriod(snap.reportingPeriod || 'Monthly');
     setModalOpen(true);
   };
 
   const handleSaveSnapshot = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const payload = {
+      date,
+      totalFollowers: Number(totalFollowers),
+      reach: Number(reach),
+      totalViews: Number(totalViews),
+      engagementRate: Number(engagementRate),
+      nonFollowerReachPercent: Number(nonFollowerReachPercent),
+      totalInteractions: Number(totalInteractions),
+      nonFollowerInteractionRate: Number(nonFollowerInteractionRate),
+      accountsEngaged: Number(accountsEngaged),
+      profileActivity: Number(profileActivity),
+      notes,
+      reportingPeriod,
+    };
+
     if (editingSnapId) {
-      updateGrowthSnapshot(editingSnapId, {
-        date,
-        totalFollowers: Number(totalFollowers),
-        reach: Number(reach),
-        totalViews: Number(totalViews),
-        engagementRate: Number(engagementRate),
-        notes,
-        reportingPeriod,
-      });
+      updateGrowthSnapshot(editingSnapId, payload);
     } else {
-      addGrowthSnapshot({
-        date,
-        totalFollowers: Number(totalFollowers),
-        reach: Number(reach),
-        totalViews: Number(totalViews),
-        engagementRate: Number(engagementRate),
-        notes,
-        reportingPeriod,
-      });
+      addGrowthSnapshot(payload);
     }
 
     setModalOpen(false);
@@ -145,27 +162,72 @@ export default function GrowthTrackerPage() {
 
       {/* Latest Metrics Summary Cards */}
       {latestSnapshot ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            label="Total Followers"
-            value={latestSnapshot.totalFollowers.toLocaleString()}
-            subtitle={`Snapshot: ${formatDate(latestSnapshot.date)}`}
-          />
-          <MetricCard
-            label="Reach"
-            value={latestSnapshot.reach.toLocaleString()}
-            subtitle={`Period: ${latestSnapshot.reportingPeriod || 'Weekly'}`}
-          />
-          <MetricCard
-            label="Total Content Views"
-            value={latestSnapshot.totalViews.toLocaleString()}
-            subtitle="Aggregate Views"
-          />
-          <MetricCard
-            label="Engagement Rate"
-            value={`${latestSnapshot.engagementRate}%`}
-            subtitle="Preserved Value"
-          />
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard
+              label="Total Followers"
+              value={latestSnapshot.totalFollowers.toLocaleString()}
+              subtitle={`Snapshot: ${formatDate(latestSnapshot.date)}`}
+            />
+            <MetricCard
+              label="Accounts Reached"
+              value={latestSnapshot.reach.toLocaleString()}
+              subtitle={latestSnapshot.nonFollowerReachPercent ? `${latestSnapshot.nonFollowerReachPercent}% non-followers` : `Period: ${latestSnapshot.reportingPeriod || 'Monthly'}`}
+            />
+            <MetricCard
+              label="Total Content Views"
+              value={latestSnapshot.totalViews.toLocaleString()}
+              subtitle="Aggregate Views"
+            />
+            <MetricCard
+              label="Engagement Rate"
+              value={`${latestSnapshot.engagementRate}%`}
+              subtitle={latestSnapshot.accountsEngaged ? `${latestSnapshot.accountsEngaged} accounts engaged` : 'Preserved Value'}
+            />
+          </div>
+
+          {/* Granular Instagram Insights Metrics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Non-Followers Reached</span>
+              <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-1 block">
+                {latestSnapshot.nonFollowerReachPercent ?? 61}%
+              </span>
+              <span className="text-[11px] text-neutral-400 mt-0.5 block">
+                ~{Math.round((latestSnapshot.reach * (latestSnapshot.nonFollowerReachPercent ?? 61)) / 100).toLocaleString()} discovery accounts
+              </span>
+            </div>
+
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Total Interactions</span>
+              <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mt-1 block">
+                {latestSnapshot.totalInteractions ?? 88}
+              </span>
+              <span className="text-[11px] text-neutral-400 mt-0.5 block">
+                Likes, comments, shares, saves
+              </span>
+            </div>
+
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Non-Follower Interactions</span>
+              <span className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1 block">
+                {latestSnapshot.nonFollowerInteractionRate ?? 25}%
+              </span>
+              <span className="text-[11px] text-neutral-400 mt-0.5 block">
+                ~{Math.round(((latestSnapshot.totalInteractions ?? 88) * (latestSnapshot.nonFollowerInteractionRate ?? 25)) / 100)} from new accounts
+              </span>
+            </div>
+
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-4 shadow-xs">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 block font-medium">Accounts Engaged</span>
+              <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
+                {latestSnapshot.accountsEngaged ?? 28}
+              </span>
+              <span className="text-[11px] text-neutral-400 mt-0.5 block">
+                Profile Activity: {latestSnapshot.profileActivity ?? 45} actions
+              </span>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="p-8 text-center bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl space-y-2">
@@ -441,6 +503,80 @@ export default function GrowthTrackerPage() {
                 </div>
               </div>
 
+              {/* Instagram Granular Insights */}
+              <div className="p-3 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/80 dark:border-neutral-700 rounded-xl space-y-2.5">
+                <span className="font-bold text-neutral-800 dark:text-neutral-200 block text-[11px]">
+                  Instagram Insights Detail
+                </span>
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  <div>
+                    <label className="font-medium text-neutral-600 dark:text-neutral-400 block mb-0.5">
+                      Non-Follower Reach %
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={nonFollowerReachPercent}
+                      onChange={(e) => setNonFollowerReachPercent(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-medium text-neutral-600 dark:text-neutral-400 block mb-0.5">
+                      Interactions
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={totalInteractions}
+                      onChange={(e) => setTotalInteractions(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-medium text-neutral-600 dark:text-neutral-400 block mb-0.5">
+                      Non-Follower Int %
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={nonFollowerInteractionRate}
+                      onChange={(e) => setNonFollowerInteractionRate(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <label className="font-medium text-neutral-600 dark:text-neutral-400 block mb-0.5">
+                      Accounts Engaged
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={accountsEngaged}
+                      onChange={(e) => setAccountsEngaged(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-medium text-neutral-600 dark:text-neutral-400 block mb-0.5">
+                      Profile Activity Actions
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={profileActivity}
+                      onChange={(e) => setProfileActivity(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
                   Reporting Period / Context Notes
@@ -475,3 +611,4 @@ export default function GrowthTrackerPage() {
     </div>
   );
 }
+

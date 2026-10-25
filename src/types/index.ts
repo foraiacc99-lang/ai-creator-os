@@ -287,7 +287,12 @@ export interface ManualGrowthSnapshot {
   totalFollowers: number;
   reach: number;
   totalViews: number;
-  engagementRate: number; // percentage e.g. 5.4
+  engagementRate: number; // percentage e.g. 5.57
+  nonFollowerReachPercent?: number; // e.g. 61 (%)
+  totalInteractions?: number; // e.g. 88
+  nonFollowerInteractionRate?: number; // e.g. 25 (%)
+  accountsEngaged?: number; // e.g. 28
+  profileActivity?: number; // e.g. 45
   notes?: string;
   reportingPeriod?: string;
   createdAt: string;
@@ -731,3 +736,4 @@ export interface ModelRecommendation {
   pricingTier: ModelPricingTier;
   confidenceScore: number;
 }
+

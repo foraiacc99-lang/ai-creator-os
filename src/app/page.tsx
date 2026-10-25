@@ -41,16 +41,20 @@ export default function HomePage() {
   } = useApp();
 
   const [addSnapshotOpen, setAddSnapshotOpen] = useState(false);
-  const [newDate, setNewDate] = useState('2026-10-14');
-  const [newFollowers, setNewFollowers] = useState<number>(5200);
-  const [newReach, setNewReach] = useState<number>(42000);
-  const [newViews, setNewViews] = useState<number>(65000);
-  const [newER, setNewER] = useState<number>(6.8);
+  const [newDate, setNewDate] = useState('2026-10-25');
+  const [newFollowers, setNewFollowers] = useState<number>(76);
+  const [newReach, setNewReach] = useState<number>(1579);
+  const [newViews, setNewViews] = useState<number>(2420);
+  const [newER, setNewER] = useState<number>(5.57);
+  const [newNonFollowerReach, setNewNonFollowerReach] = useState<number>(61);
+  const [newInteractions, setNewInteractions] = useState<number>(88);
+  const [newAccountsEngaged, setNewAccountsEngaged] = useState<number>(28);
   const [newNotes, setNewNotes] = useState('');
 
-  // Latest manual snapshot
-  const latestSnapshot = snapshots[0] || null;
-  const prevSnapshot = snapshots[1] || null;
+  // Latest manual snapshot (chronologically latest)
+  const sortedSnapshots = [...snapshots].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const latestSnapshot = sortedSnapshots[0] || null;
+  const prevSnapshot = sortedSnapshots[1] || null;
 
   const followerChange =
     latestSnapshot && prevSnapshot && prevSnapshot.totalFollowers > 0
@@ -88,8 +92,12 @@ export default function HomePage() {
       reach: Number(newReach),
       totalViews: Number(newViews),
       engagementRate: Number(newER),
+      nonFollowerReachPercent: Number(newNonFollowerReach),
+      totalInteractions: Number(newInteractions),
+      nonFollowerInteractionRate: 25,
+      accountsEngaged: Number(newAccountsEngaged),
       notes: newNotes,
-      reportingPeriod: 'Weekly',
+      reportingPeriod: 'Monthly',
     });
     setAddSnapshotOpen(false);
     setNewNotes('');
@@ -261,21 +269,23 @@ export default function HomePage() {
               changePeriod="vs previous snapshot"
             />
             <MetricCard
-              label="Reach"
+              label="Accounts Reached"
               value={latestSnapshot.reach.toLocaleString()}
+              subtitle={latestSnapshot.nonFollowerReachPercent ? `${latestSnapshot.nonFollowerReachPercent}% non-followers` : undefined}
               change={reachChange}
               changePeriod="vs previous snapshot"
             />
             <MetricCard
               label="Total Views"
               value={latestSnapshot.totalViews.toLocaleString()}
+              subtitle={latestSnapshot.totalInteractions ? `${latestSnapshot.totalInteractions} interactions` : undefined}
               change={viewsChange}
               changePeriod="vs previous snapshot"
             />
             <MetricCard
               label="Engagement Rate"
               value={`${latestSnapshot.engagementRate}%`}
-              subtitle={latestSnapshot.reportingPeriod || 'Configured ER'}
+              subtitle={latestSnapshot.accountsEngaged ? `${latestSnapshot.accountsEngaged} accounts engaged` : latestSnapshot.reportingPeriod || 'Configured ER'}
             />
           </div>
         ) : (
@@ -564,6 +574,46 @@ export default function HomePage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1 text-[11px]">
+                    Non-Followers %
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={newNonFollowerReach}
+                    onChange={(e) => setNewNonFollowerReach(Number(e.target.value))}
+                    className="w-full px-2.5 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1 text-[11px]">
+                    Interactions
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newInteractions}
+                    onChange={(e) => setNewInteractions(Number(e.target.value))}
+                    className="w-full px-2.5 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1 text-[11px]">
+                    Accounts Engaged
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={newAccountsEngaged}
+                    onChange={(e) => setNewAccountsEngaged(Number(e.target.value))}
+                    className="w-full px-2.5 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
                   Context / Notes (Optional)
@@ -598,3 +648,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+

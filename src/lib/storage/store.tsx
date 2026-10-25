@@ -219,9 +219,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [preferences, setPreferences] = useState<UserPreferences>(() =>
     readStorage(STORAGE_KEYS.PREFERENCES, INITIAL_PREFERENCES)
   );
-  const [snapshots, setSnapshots] = useState<ManualGrowthSnapshot[]>(() =>
-    readStorage(STORAGE_KEYS.SNAPSHOTS, INITIAL_GROWTH_SNAPSHOTS)
-  );
+  const [snapshots, setSnapshots] = useState<ManualGrowthSnapshot[]>(() => {
+    const loaded = readStorage(STORAGE_KEYS.SNAPSHOTS, INITIAL_GROWTH_SNAPSHOTS);
+    if (Array.isArray(loaded) && (loaded.length === 0 || loaded.some((s) => s.totalFollowers > 1000))) {
+      writeStorage(STORAGE_KEYS.SNAPSHOTS, INITIAL_GROWTH_SNAPSHOTS);
+      return INITIAL_GROWTH_SNAPSHOTS;
+    }
+    return loaded;
+  });
   const [ideas, setIdeas] = useState<ContentIdea[]>(() =>
     readStorage(STORAGE_KEYS.IDEAS, INITIAL_IDEAS)
   );
@@ -1899,3 +1904,4 @@ export const useApp = (): AppContextType => {
   }
   return context;
 };
+
