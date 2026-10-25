@@ -372,10 +372,22 @@ export async function executeAICompletion(
   // 1. Ollama (Default, Zero Cost)
   if (provider === 'ollama') {
     const endpoint = (config?.endpoint || 'http://localhost:11434').replace(/\/$/, '');
-    const model = config?.model || config?.textModel || 'llama3.2';
+    let model = config?.model || config?.textModel || 'llama3.2';
+
+    // Normalize any cloud model name passed mistakenly to Ollama
+    if (
+      model.includes('kimi') ||
+      model.includes('moonshot') ||
+      model.includes('gpt') ||
+      model.includes('claude') ||
+      model.includes('o1') ||
+      model.includes('o3')
+    ) {
+      model = 'llama3.2';
+    }
 
     try {
-      const res = await fetch(`${endpoint}/api/generate`, {
+      let res = await fetch(`${endpoint}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -390,10 +402,50 @@ export async function executeAICompletion(
         signal: AbortSignal.timeout(30000),
       });
 
+      let data: any = null;
       if (res.ok) {
-        const data = await res.json();
+        data = await res.json();
         if (data.response) return data.response.trim();
-      } else {
+      }
+
+      // If requested model was not found in Ollama, query /api/tags and retry with first available model
+      if (!res.ok || (data && data.error && data.error.includes('not found'))) {
+        try {
+          const tagsRes = await fetch(`${endpoint}/api/tags`, { signal: AbortSignal.timeout(3000) });
+          if (tagsRes.ok) {
+            const tagsData = await tagsRes.json();
+            const available: string[] = (tagsData.models || []).map((m: any) => m.name || m.model || '');
+            const fallbackModel =
+              available.find((m: string) => m.includes('llama') || m.includes('qwen') || m.includes('gemma')) ||
+              available[0];
+
+            if (fallbackModel && fallbackModel !== model) {
+              const retryRes = await fetch(`${endpoint}/api/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  model: fallbackModel,
+                  prompt,
+                  system: systemPrompt,
+                  stream: false,
+                  options: {
+                    temperature: config?.temperature ?? 0.7,
+                  },
+                }),
+                signal: AbortSignal.timeout(30000),
+              });
+              if (retryRes.ok) {
+                const retryData = await retryRes.json();
+                if (retryData.response) return retryData.response.trim();
+              }
+            }
+          }
+        } catch {
+          // ignore tag lookup error
+        }
+      }
+
+      if (res && !res.ok) {
         const errText = await res.text();
         console.warn(`Ollama error HTTP ${res.status}: ${errText}`);
       }

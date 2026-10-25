@@ -441,6 +441,7 @@ export interface AIProviderConfig {
   // Ollama
   endpoint: string;
   textModel: string;
+  model?: string;
   availableModels: string[];
   // Groq
   groqApiKey?: string;

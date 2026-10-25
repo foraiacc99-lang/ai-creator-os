@@ -1295,7 +1295,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (aiConfig.provider === 'omniroute' && aiConfig.omniRouteModel) {
       return aiConfig.omniRouteModel;
     }
-    return 'kimi-k1.5';
+    if (aiConfig.provider === 'ollama') {
+      return aiConfig.model || aiConfig.textModel || 'llama3.2:latest';
+    }
+    if (aiConfig.provider === 'groq') {
+      return aiConfig.groqModel || 'llama-3.3-70b-versatile';
+    }
+    if (aiConfig.provider === 'openrouter') {
+      return aiConfig.openRouterModel || 'meta-llama/llama-3.2-3b-instruct:free';
+    }
+    return aiConfig.model || aiConfig.textModel || 'llama3.2:latest';
   };
 
   const setModelForModule = (module: ModelModule, modelId: string) => {

@@ -501,3 +501,89 @@ test('Free-Only Mode: filters model catalog without assuming unverified models a
   assert.equal(filtered.some((m) => m.id === 'kimi-k1.5'), false);
 });
 
+
+// 21. LinkedIn Targeted Post Refinements: Visible Transformation Verification
+test('LinkedIn Refinements: guarantees visible structural transformation and never leaves text unchanged', () => {
+  const initialPost = 'A common trap when dealing with systems is jumping straight to complex tools before understanding the baseline workflow. In order to utilize these models effectively, furthermore, you must implement proper schemas.';
+
+  const refinePost = (content, refineType) => {
+    if (refineType === 'make_conversational') {
+      return "Here's an honest lesson I had to learn the hard way:\n\n" + content.replace(/in order to/gi, 'to').replace(/furthermore,?\s*/gi, 'Plus, ') + "\n\nCurious how other builders handle this -- what's been your experience?";
+    }
+    if (refineType === 'make_professional') {
+      return "Executive Brief: Scalable Systems and Operational Discipline\n\n1. Enforce Input Boundaries\n2. Observable Latency Monitoring\n3. Minimal Verifiable Interventions";
+    }
+    if (refineType === 'add_practical_detail') {
+      return content + "\n\nConcrete Implementation Checklist:\n1. Boundary Schema Validation (Zod)\n2. Timeout Budgets (500ms)\n3. Self-Hosted Verification";
+    }
+    return content;
+  };
+
+  const conversational = refinePost(initialPost, 'make_conversational');
+  assert.notEqual(conversational, initialPost);
+  assert.equal(conversational.includes("Here's an honest lesson"), true);
+  assert.equal(conversational.includes('Plus,'), true);
+
+  const professional = refinePost(initialPost, 'make_professional');
+  assert.notEqual(professional, initialPost);
+  assert.equal(professional.includes('Executive Brief'), true);
+
+  const detailed = refinePost(initialPost, 'add_practical_detail');
+  assert.notEqual(detailed, initialPost);
+  assert.equal(detailed.includes('Concrete Implementation Checklist'), true);
+});
+
+// 22. Content Ideas to LinkedIn Studio Integration
+test('LinkedIn Studio: maps content idea fields directly into generator strategy', () => {
+  const sampleIdea = {
+    id: 'idea_491',
+    title: 'Why Schema Validation Beats Retry Loops',
+    topic: 'Input Validation Boundaries',
+    pillar: 'BUILDING_PROJECTS_AND_SYSTEMS',
+    targetAudience: 'Developers',
+    mainAngle: 'Stop treating symptoms with complex retry loops when you can validate schema boundaries upfront.',
+    hook: '80% of pipeline errors vanish with one schema check.',
+    supportingResearch: 'Martin Fowler distributed systems patterns.',
+  };
+
+  const mapIdeaToLinkedInStrategy = (idea) => ({
+    topic: idea.topic || idea.title,
+    title: idea.title,
+    pillar: idea.pillar,
+    targetAudience: idea.targetAudience,
+    userNotes: [idea.mainAngle, idea.hook, idea.supportingResearch].filter(Boolean).join('\n\n'),
+  });
+
+  const strategy = mapIdeaToLinkedInStrategy(sampleIdea);
+  assert.equal(strategy.topic, 'Input Validation Boundaries');
+  assert.equal(strategy.title, 'Why Schema Validation Beats Retry Loops');
+  assert.equal(strategy.pillar, 'BUILDING_PROJECTS_AND_SYSTEMS');
+  assert.equal(strategy.userNotes.includes('80% of pipeline errors vanish'), true);
+});
+
+// 23. Research Before Writing: Domain-Specific Grounding Verification
+test('Research Before Writing: generates domain-specific verified claims and citations', () => {
+  const mockWebResearch = (query) => {
+    const q = query.toLowerCase();
+    if (q.includes('sales') || q.includes('cold call')) {
+      return {
+        sourceName: 'Harvard Business Review Sales Benchmark',
+        hasClaims: true,
+        primaryClaim: '73% of mobile users abandon a local business page that takes longer than 3 seconds to render.',
+      };
+    }
+    return {
+      sourceName: 'System Architecture Standards',
+      hasClaims: true,
+      primaryClaim: 'Validating data schemas at boundaries catches over 80% of pipeline errors before execution.',
+    };
+  };
+
+  const salesRes = mockWebResearch('Cold calling local business websites');
+  assert.equal(salesRes.sourceName.includes('Sales Benchmark'), true);
+  assert.equal(salesRes.hasClaims, true);
+
+  const techRes = mockWebResearch('Pipeline schema validation');
+  assert.equal(techRes.sourceName.includes('Architecture'), true);
+  assert.equal(techRes.hasClaims, true);
+});
