@@ -20,6 +20,8 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/strategist': { title: 'AI Strategist', subtitle: 'Empirical recommendations across your 6 content pillars' },
   '/ideas': { title: 'Content Ideas Library', subtitle: 'Searchable, multi-pillar idea catalog with duplicate detection' },
   '/scripts': { title: 'Script Studio', subtitle: 'Short-form video writing, teleprompter, and automated reviewer' },
+  '/x': { title: 'X Studio', subtitle: 'Concise, high-engagement X posts and threads with quality audits' },
+  '/linkedin': { title: 'LinkedIn Studio', subtitle: 'Authentic text & carousel posts with grounding checks' },
   '/carousel': { title: 'Carousel & Stories Studio', subtitle: 'Visual slide builder and story sequence planner' },
   '/competitor': { title: 'Competitor Research', subtitle: 'Public signals, transcript analysis, and opportunity engine' },
   '/calendar': { title: 'Content Calendar', subtitle: 'Realistic production stages and Google Calendar sync' },
@@ -46,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white/95 dark:bg-neutral-950/90 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 px-4 sm:px-6 flex items-center justify-between">
+    <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-neutral-950/70 backdrop-blur-md border-b border-neutral-200/60 dark:border-neutral-800/60 px-4 sm:px-6 flex items-center justify-between transition-colors">
       {/* Left title & mobile trigger */}
       <div className="flex items-center gap-3">
         <button

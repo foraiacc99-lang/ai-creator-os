@@ -14,6 +14,7 @@ import {
   AIProviderConfig,
   GoogleCalendarConfig,
   LinkedInPostRecord,
+  XPostRecord,
   ModelPreferences,
 } from '@/types';
 
@@ -53,21 +54,28 @@ export const INITIAL_PREFERENCES: UserPreferences = {
 export const INITIAL_AI_CONFIG: AIProviderConfig = {
   provider: 'ollama',
   endpoint: 'http://localhost:11434',
-  textModel: 'llama3.2',
-  availableModels: ['llama3.2', 'mistral', 'qwen2.5', 'deepseek-r1:8b'],
-  omniRouteEndpoint: 'http://localhost:20128/v1',
-  omniRouteModel: 'kimi-k1.5',
-  localOnlyMode: false,
+  textModel: 'qwen3:8b',
+  model: 'qwen3:8b',
+  availableModels: ['qwen3:8b', 'llama3.2:latest', 'qwen3:8b-direct', 'gemma4:latest'],
+  localOnlyMode: true,
   isCloudEnabled: false,
-  freeOnlyMode: false,
+  freeOnlyMode: true,
   temperature: 0.7,
-  isConnected: false,
+  isConnected: true,
+  statusMessage: 'Connected to local Ollama (qwen3:8b verified). Zero API cost.',
 };
 
 export const INITIAL_MODEL_PREFERENCES: ModelPreferences = {
-  globalDefault: 'kimi-k1.5',
-  moduleOverrides: {},
-  freeOnlyMode: false,
+  globalDefault: 'qwen3:8b',
+  moduleOverrides: {
+    x_posts: 'qwen3:8b',
+    linkedin: 'qwen3:8b',
+    scripts: 'qwen3:8b',
+    ideas: 'qwen3:8b',
+    carousel: 'qwen3:8b',
+    chat: 'qwen3:8b',
+  },
+  freeOnlyMode: true,
 };
 
 export const INITIAL_GOOGLE_CALENDAR_CONFIG: GoogleCalendarConfig = {
@@ -987,3 +995,140 @@ export const INITIAL_LINKEDIN_POSTS: LinkedInPostRecord[] = [
 ];
 
 
+
+
+export const INITIAL_X_POSTS: XPostRecord[] = [
+  {
+    id: 'x_post_01',
+    title: 'Local AI with Qwen vs Cloud Stack Fees',
+    mode: 'single',
+    topic: 'Running local Qwen 8B with Ollama for zero-cost creator workflows',
+    niche: 'AI tools and automation',
+    contentPillar: 'AI_TOOLS_AND_AUTOMATION',
+    targetAudience: 'Developers & AI enthusiasts',
+    postObjective: 'Share an opinion',
+    postFormat: 'Opinion or hot take',
+    writingStyle: 'Casual',
+    secondaryWritingStyle: 'Savage',
+    singlePostContent: 'been running qwen3:8b locally on ollama instead of paying $200/mo API fees.\n\nzero latency spikes, zero subscriptions, zero data leaving my machine.\n\nmost creators don\'t need a complex multi-cloud agent stack. they need 1 local model that actually executes.',
+    threadPosts: [],
+    alternativeHooks: [
+      'been running qwen3:8b locally on ollama instead of paying $200/mo API fees.',
+      'your ai workflow doesn\'t need another cloud dashboard. it needs to run on your own machine.',
+      'hot take: 90% of solo devs paying for cloud api tiers would be better off on a local 8b model.'
+    ],
+    ctaSettings: {
+      type: 'Offer a relevant resource',
+      resourceKeyword: 'QWEN',
+      resourceName: 'Local Ollama Setup & System Prompt Matrix',
+      resourceReady: true,
+      verificationStatus: 'Verified Ready',
+      customText: 'reply QWEN and I\'ll share my exact local setup instructions.'
+    },
+    isResearchEnabled: true,
+    researchSummary: 'Verified Qwen 3 8B running locally on Ollama (quantization Q4_K_M, 5.2GB memory footprint). Fully private with zero cloud egress.',
+    researchSources: [
+      {
+        title: 'Qwen 2.5 / 3 Official GitHub & Docs',
+        url: 'https://github.com/QwenLM/Qwen2.5',
+        sourceName: 'GitHub',
+        snippet: 'Leading open-weights model suite with state-of-the-art coding and reasoning capabilities.',
+        repoMeta: {
+          stars: 42000,
+          license: 'Apache-2.0',
+          maintenance: 'Active release cycle',
+          installation: 'ollama run qwen3:8b'
+        }
+      }
+    ],
+    status: 'Ready to Publish',
+    plannedDate: '2026-10-27',
+    plannedTime: '15:30',
+    qualityAudit: {
+      charCount: 247,
+      isWithinLimit: true,
+      hasClicheHooks: false,
+      hasFabricatedClaims: false,
+      readabilityScore: 94,
+      checks: [
+        { id: 'char_len', rule: 'Length within 280-char limit', passed: true, feedback: '247/280 characters used.' },
+        { id: 'cliche_check', rule: 'No repetitive cliches', passed: true, feedback: 'Authentic opening hook.' },
+        { id: 'no_fake_data', rule: 'Zero fabricated metrics', passed: true, feedback: 'Verified local facts.' }
+      ],
+      testedAt: '2026-10-26T00:00:00.000Z'
+    },
+    createdAt: '2026-10-25T14:00:00.000Z',
+    updatedAt: '2026-10-25T14:30:00.000Z'
+  },
+  {
+    id: 'x_post_02',
+    title: 'Landing $1.5k Website Clients Without Cold Call Anxiety',
+    mode: 'thread',
+    topic: 'How to pitch $1,500 websites to local businesses by framing cost as lost revenue',
+    niche: 'Sales and cold calling',
+    contentPillar: 'SALES_PSYCHOLOGY_AND_CLIENT_ACQUISITION',
+    targetAudience: 'Freelancers & Agency owners',
+    postObjective: 'Teach something',
+    postFormat: 'Multi-post thread',
+    writingStyle: 'Educational',
+    secondaryWritingStyle: 'Professional',
+    singlePostContent: '',
+    threadCountTarget: 5,
+    threadPosts: [
+      {
+        id: 't_01',
+        order: 1,
+        content: 'how we pitch $1,500 websites to local business owners without sounding like every other freelancer in their DMs:\n\na 5-step breakdown (steal this):',
+        charCount: 152,
+        isWithinLimit: true
+      },
+      {
+        id: 't_02',
+        order: 2,
+        content: '1. don\'t sell design or "clean code".\n\nlocal business owners don\'t care about your tech stack. they care about the phone ringing.\n\naudit their mobile page speed and show them how many visitors bounce before seeing the phone number.',
+        charCount: 233,
+        isWithinLimit: true
+      },
+      {
+        id: 't_03',
+        order: 3,
+        content: '2. reframe the price against lost revenue.\n\nif an average customer is worth $500, a slow site losing 2 clients a month costs them $12k/year.\n\nsuddenly your $1,500 one-time fee pays for itself before month two.',
+        charCount: 213,
+        isWithinLimit: true
+      },
+      {
+        id: 't_04',
+        order: 4,
+        content: '3. offer a 14-day delivery sprint.\n\nmost legacy agencies drag projects out for 8 weeks of endless meetings.\n\nspeed of execution builds trust faster than a 30-slide pitch deck.',
+        charCount: 184,
+        isWithinLimit: true
+      },
+      {
+        id: 't_05',
+        order: 5,
+        content: '4. keep handover dead simple.\n\nsend a 3-minute video showing them how to update text. they will refer you to every business owner on their street.\n\nreply AUDIT if you want our exact 1-page mobile audit script.',
+        charCount: 213,
+        isWithinLimit: true
+      }
+    ],
+    alternativeHooks: [
+      'how we pitch $1,500 websites to local business owners without sounding like every other freelancer in their DMs:',
+      'when a client says "$1,500 is too much for a website", never defend your hourly rate. say this instead:',
+      'the single question that turns cold website prospects into signed clients in under 15 minutes:'
+    ],
+    ctaSettings: {
+      type: 'Offer a relevant resource',
+      resourceKeyword: 'AUDIT',
+      resourceName: '1-Page Local Client Audit Script',
+      resourceReady: true,
+      verificationStatus: 'Verified Ready',
+      customText: 'reply AUDIT and I\'ll DM you the template.'
+    },
+    isResearchEnabled: false,
+    status: 'Draft',
+    plannedDate: '2026-10-28',
+    plannedTime: '17:00',
+    createdAt: '2026-10-25T16:00:00.000Z',
+    updatedAt: '2026-10-25T16:45:00.000Z'
+  }
+];

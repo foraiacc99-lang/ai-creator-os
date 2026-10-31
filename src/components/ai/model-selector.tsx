@@ -40,6 +40,7 @@ export interface ModelSelectorProps {
 
 const PROVIDER_CATEGORIES: Array<{ id: string; label: string; match?: ModelProviderCategory }> = [
   { id: 'all', label: 'All Providers' },
+  { id: 'qwen', label: 'Qwen / Alibaba', match: 'Qwen / Alibaba' },
   { id: 'kimi', label: 'Kimi / Moonshot', match: 'Kimi / Moonshot' },
   { id: 'glm', label: 'GLM / Zhipu', match: 'GLM / Zhipu' },
   { id: 'anthropic', label: 'Anthropic', match: 'Anthropic' },
@@ -59,6 +60,7 @@ const MODULE_NAMES: Record<ModelModule, string> = {
   linkedin: 'LinkedIn Post Studio',
   strategist: 'AI Strategist',
   competitor: 'Competitor Research',
+  x_posts: 'X Post Studio',
 };
 
 export function ModelSelector({

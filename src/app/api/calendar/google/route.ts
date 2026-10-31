@@ -16,11 +16,20 @@ export async function GET(req: NextRequest) {
     }
 
     const scope = encodeURIComponent('https://www.googleapis.com/auth/calendar.events');
+    const state = Math.random().toString(36).substring(2, 15);
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
       redirectUri
-    )}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+    )}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
 
-    return NextResponse.json({ configured: true, authUrl });
+    const res = NextResponse.json({ configured: true, authUrl });
+    res.cookies.set('oauth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 600,
+    });
+    return res;
   }
 
   return NextResponse.json({ status: 'Google Calendar API handler ready' });

@@ -18,6 +18,8 @@ import {
   GoogleCalendarConfig,
   CompetitorPublicAnalysis,
   LinkedInPostRecord,
+  XPostRecord,
+  ContentFormat,
   OmniRouteModel,
   ModelPreferences,
   ModelModule,
@@ -38,6 +40,7 @@ import {
   INITIAL_AI_CONFIG,
   INITIAL_GOOGLE_CALENDAR_CONFIG,
   INITIAL_LINKEDIN_POSTS,
+  INITIAL_X_POSTS,
   INITIAL_MODEL_PREFERENCES,
 } from './demo-data';
 
@@ -62,6 +65,7 @@ interface AppContextType {
   carousels: CarouselProject[];
   stories: StorySequence[];
   linkedinPosts: LinkedInPostRecord[];
+  xPosts: XPostRecord[];
   aiConfig: AIProviderConfig;
   googleCalendar: GoogleCalendarConfig;
   theme: 'light' | 'dark' | 'system';
@@ -139,6 +143,16 @@ interface AppContextType {
   createLinkedInPostFromReport: (report: CreatorReportNote) => LinkedInPostRecord;
   scheduleLinkedInPostToCalendar: (postId: string, plannedDate: string, plannedTime?: string) => CalendarEntry;
 
+  // X (Twitter) Posts & Threads
+  addXPost: (post: Omit<XPostRecord, 'id' | 'createdAt' | 'updatedAt'>) => XPostRecord;
+  updateXPost: (id: string, updates: Partial<XPostRecord>) => void;
+  deleteXPost: (id: string) => void;
+  duplicateXPost: (id: string) => XPostRecord;
+  createXPostFromScript: (script: ScriptItem) => XPostRecord;
+  createXPostFromIdea: (idea: ContentIdea) => XPostRecord;
+  createXPostFromLinkedIn: (linkedinPost: LinkedInPostRecord) => XPostRecord;
+  scheduleXPostToCalendar: (postId: string, plannedDate: string, plannedTime?: string) => CalendarEntry;
+
   // AI Recommendations
   updateRecommendationStatus: (id: string, status: AIRecommendation['status']) => void;
   convertRecommendationToIdea: (rec: AIRecommendation) => ContentIdea;
@@ -186,6 +200,7 @@ const STORAGE_KEYS = {
   CAROUSELS: 'ai_creator_os_carousels_v2',
   STORIES: 'ai_creator_os_stories_v2',
   LINKEDIN_POSTS: 'ai_creator_os_linkedin_posts_v2',
+  X_POSTS: 'ai_creator_os_x_posts_v2',
   AI_CONFIG: 'ai_creator_os_ai_config_v2',
   MODEL_PREFERENCES: 'ai_creator_os_model_prefs_v2',
   GOOGLE_CALENDAR: 'ai_creator_os_google_cal_v2',
@@ -259,6 +274,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
   const [linkedinPosts, setLinkedinPosts] = useState<LinkedInPostRecord[]>(() =>
     readStorage(STORAGE_KEYS.LINKEDIN_POSTS, INITIAL_LINKEDIN_POSTS)
+  );
+  const [xPosts, setXPosts] = useState<XPostRecord[]>(() =>
+    readStorage(STORAGE_KEYS.X_POSTS, INITIAL_X_POSTS)
   );
   const [aiConfig, setAIConfig] = useState<AIProviderConfig>(() =>
     readStorage(STORAGE_KEYS.AI_CONFIG, INITIAL_AI_CONFIG)
@@ -1292,11 +1310,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return modelPreferences.globalDefault.trim();
     }
     // 3. Provider-specific model
-    if (aiConfig.provider === 'omniroute' && aiConfig.omniRouteModel) {
+    if ((aiConfig.provider as string) === 'omniroute' && aiConfig.omniRouteModel) {
       return aiConfig.omniRouteModel;
     }
     if (aiConfig.provider === 'ollama') {
-      return aiConfig.model || aiConfig.textModel || 'llama3.2:latest';
+      return aiConfig.model || aiConfig.textModel || 'qwen3:8b';
     }
     if (aiConfig.provider === 'groq') {
       return aiConfig.groqModel || 'llama-3.3-70b-versatile';
@@ -1304,7 +1322,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (aiConfig.provider === 'openrouter') {
       return aiConfig.openRouterModel || 'meta-llama/llama-3.2-3b-instruct:free';
     }
-    return aiConfig.model || aiConfig.textModel || 'llama3.2:latest';
+    return aiConfig.model || aiConfig.textModel || 'qwen3:8b';
   };
 
   const setModelForModule = (module: ModelModule, modelId: string) => {
@@ -1638,6 +1656,237 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return calEntry;
   };
 
+  // X (Twitter) Posts & Threads
+  const addXPost = (
+    data: Omit<XPostRecord, 'id' | 'createdAt' | 'updatedAt'>
+  ): XPostRecord => {
+    const newPost: XPostRecord = {
+      ...data,
+      id: `x_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setXPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.X_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const updateXPost = (id: string, updates: Partial<XPostRecord>) => {
+    setXPosts((prev) => {
+      const next = prev.map((p) =>
+        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+      );
+      writeStorage(STORAGE_KEYS.X_POSTS, next);
+      return next;
+    });
+  };
+
+  const deleteXPost = (id: string) => {
+    setXPosts((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      writeStorage(STORAGE_KEYS.X_POSTS, next);
+      return next;
+    });
+  };
+
+  const duplicateXPost = (id: string): XPostRecord => {
+    const original = xPosts.find((p) => p.id === id) || xPosts[0];
+    const newPost: XPostRecord = {
+      ...original,
+      id: `x_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: `${original.title} [Copy]`,
+      status: 'Draft',
+      plannedDate: undefined,
+      plannedTime: undefined,
+      calendarEntryId: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setXPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.X_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const createXPostFromScript = (script: ScriptItem): XPostRecord => {
+    const spoken = script.currentSpokenScript || script.spokenScriptLong || script.spokenScriptShort || '';
+    const cleanSpoken = spoken
+      .replace(/^stop doing .*?fix:?/i, '')
+      .replace(/save this video.*?$/i, '')
+      .replace(/comment ".*?" below.*?$/i, '')
+      .trim();
+
+    const title = `X: ${script.title}`;
+    const hook = script.hookOptions?.[0] || script.title;
+    const singleContent = `${hook.toLowerCase()}\n\n${cleanSpoken.slice(0, 160)}...\n\nspeed of execution always wins.`.slice(0, 275);
+
+    const newPost: XPostRecord = {
+      id: `x_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      mode: 'single',
+      topic: script.title,
+      niche: 'AI tools and automation',
+      contentPillar: script.pillar,
+      targetAudience: 'Developers & builders',
+      postObjective: 'Teach something',
+      postFormat: 'Single post',
+      writingStyle: 'Casual',
+      secondaryWritingStyle: 'Savage',
+      userNotes: `Adapted from Reel script: "${script.title}"`,
+      singlePostContent: singleContent,
+      threadPosts: [],
+      alternativeHooks: script.hookOptions || [hook],
+      ctaSettings: {
+        type: 'Offer a relevant resource',
+        resourceKeyword: 'SCRIPT',
+        resourceName: script.title,
+        resourceReady: true,
+        verificationStatus: 'Verified Ready',
+        customText: 'reply SCRIPT and I will DM you the breakdown.'
+      },
+      sourceReference: {
+        type: 'script',
+        id: script.id,
+        title: script.title,
+      },
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setXPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.X_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const createXPostFromIdea = (idea: ContentIdea): XPostRecord => {
+    const hook = idea.hook || idea.title;
+    const body = idea.mainAngle ? `${idea.mainAngle}\n\nmost people overcomplicate this.` : 'most people overcomplicate this.';
+    const content = `${hook.toLowerCase()}\n\n${body}`.slice(0, 270);
+
+    const newPost: XPostRecord = {
+      id: `x_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: `X: ${idea.title}`,
+      mode: 'single',
+      topic: idea.topic || idea.title,
+      niche: 'AI tools and automation',
+      contentPillar: idea.pillar,
+      targetAudience: idea.targetAudience || 'Developers',
+      postObjective: 'Share a discovery',
+      postFormat: 'Opinion or hot take',
+      writingStyle: 'Casual',
+      secondaryWritingStyle: 'Savage',
+      userNotes: `From Idea: "${idea.title}"\n${idea.supportingResearch || ''}`,
+      singlePostContent: content,
+      threadPosts: [],
+      alternativeHooks: [hook, `why nobody is talking about ${idea.topic || idea.title}:`, `hot take on ${idea.topic || idea.title}:`],
+      ctaSettings: {
+        type: 'No CTA',
+      },
+      sourceReference: {
+        type: 'idea',
+        id: idea.id,
+        title: idea.title,
+      },
+      status: 'Idea',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setXPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.X_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const createXPostFromLinkedIn = (li: LinkedInPostRecord): XPostRecord => {
+    const cleanContent = (li.currentEditedContent || li.generatedContent || '')
+      .split('\n')
+      .filter((line) => line.trim())
+      .slice(0, 5)
+      .join('\n\n')
+      .slice(0, 270);
+
+    const newPost: XPostRecord = {
+      id: `x_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title: `X: ${li.title}`,
+      mode: 'single',
+      topic: li.topic,
+      niche: li.niche || 'Business and entrepreneurship',
+      contentPillar: li.contentPillar,
+      targetAudience: li.targetAudience,
+      postObjective: 'Teach something',
+      postFormat: 'Single post',
+      writingStyle: 'Professional',
+      secondaryWritingStyle: 'Casual',
+      userNotes: `Adapted from LinkedIn Post: "${li.title}"`,
+      singlePostContent: cleanContent,
+      threadPosts: [],
+      alternativeHooks: [li.title, `the truth about ${li.topic}:`],
+      ctaSettings: {
+        type: li.ctaSettings?.resourceKeyword ? 'Offer a relevant resource' : 'No CTA',
+        resourceKeyword: li.ctaSettings?.resourceKeyword || 'GUIDE',
+        resourceName: li.ctaSettings?.resourceName || li.title,
+        resourceReady: true,
+        verificationStatus: 'Verified Ready',
+        customText: li.ctaSettings?.resourceKeyword ? `reply ${li.ctaSettings.resourceKeyword} for the template.` : undefined,
+      },
+      sourceReference: {
+        type: 'linkedin',
+        id: li.id,
+        title: li.title,
+      },
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setXPosts((prev) => {
+      const next = [newPost, ...prev];
+      writeStorage(STORAGE_KEYS.X_POSTS, next);
+      return next;
+    });
+    return newPost;
+  };
+
+  const scheduleXPostToCalendar = (postId: string, plannedDate: string, plannedTime?: string): CalendarEntry => {
+    const post = xPosts.find((p) => p.id === postId);
+    if (!post) throw new Error('X Post not found');
+
+    const calendarFormat: ContentFormat = post.mode === 'thread' ? 'X_THREAD' : 'X_POST';
+
+    const entry = addCalendarEntry({
+      title: post.title || 'Scheduled X Post',
+      plannedDate,
+      plannedTime: plannedTime || '14:00',
+      format: calendarFormat,
+      pillar: post.contentPillar || 'AI_TOOLS_AND_AUTOMATION',
+      stage: 'Planned Publishing',
+      status: 'Ready to Publish',
+      xPostId: post.id,
+      notes: post.mode === 'thread' ? `X Multi-Post Thread (${post.threadPosts.length} posts)` : post.singlePostContent.slice(0, 120),
+    });
+
+    updateXPost(postId, {
+      plannedDate,
+      plannedTime: plannedTime || '14:00',
+      status: 'Scheduled',
+      calendarEntryId: entry.id,
+    });
+
+    return entry;
+  };
+
   // Data Management
   const exportAllDataJSON = (): string => {
     const fullBackup = {
@@ -1653,6 +1902,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       carousels,
       stories,
       linkedinPosts,
+      xPosts,
       recommendations,
       exportedAt: new Date().toISOString(),
       version: '2.0.0',
@@ -1825,6 +2075,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         carousels,
         stories,
         linkedinPosts,
+        xPosts,
         aiConfig,
         modelPreferences,
         cachedModels,
@@ -1888,6 +2139,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createLinkedInPostFromResearch,
         createLinkedInPostFromReport,
         scheduleLinkedInPostToCalendar,
+        addXPost,
+        updateXPost,
+        deleteXPost,
+        duplicateXPost,
+        createXPostFromScript,
+        createXPostFromIdea,
+        createXPostFromLinkedIn,
+        scheduleXPostToCalendar,
         updateRecommendationStatus,
         convertRecommendationToIdea,
         updateAIConfig,

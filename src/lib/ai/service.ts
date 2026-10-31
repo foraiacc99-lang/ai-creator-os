@@ -1,3 +1,8 @@
+export function cleanModelResponse(text: string): string {
+  if (!text) return '';
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
 import {
   AIProviderConfig,
   OmniRouteModel,
@@ -8,6 +13,8 @@ import {
   ModelRecommendation,
   ModelModule,
 } from '@/types';
+
+import { isSafeEndpoint } from '@/lib/security';
 
 export const OMNIROUTE_DEFAULT_ENDPOINT = 'http://localhost:20128/v1';
 
@@ -175,7 +182,11 @@ export async function testAIConnection(config: AIProviderConfig): Promise<AIConn
   const provider = config.provider || 'ollama';
 
   if (provider === 'ollama') {
-    const endpoint = (config.endpoint || 'http://localhost:11434').replace(/\/$/, '');
+    const rawEndpoint = config.endpoint || 'http://localhost:11434';
+    if (!isSafeEndpoint(rawEndpoint)) {
+      return { success: false, message: 'Invalid or restricted endpoint URL provided.' };
+    }
+    const endpoint = rawEndpoint.replace(/\/$/, '');
     const startTime = Date.now();
     try {
       const res = await fetch(`${endpoint}/api/tags`, {
@@ -306,7 +317,7 @@ export async function testAIConnection(config: AIProviderConfig): Promise<AIConn
     }
   }
 
-  if (provider === 'omniroute') {
+  if ((provider as string) === 'omniroute') {
     const rawEndpoint =
       config.omniRouteEndpoint || process.env.OMNIROUTE_ENDPOINT || OMNIROUTE_DEFAULT_ENDPOINT;
     const endpoint = rawEndpoint.replace(/\/$/, '');
@@ -371,8 +382,12 @@ export async function executeAICompletion(
 
   // 1. Ollama (Default, Zero Cost)
   if (provider === 'ollama') {
-    const endpoint = (config?.endpoint || 'http://localhost:11434').replace(/\/$/, '');
-    let model = config?.model || config?.textModel || 'llama3.2';
+    const rawEndpoint = config?.endpoint || 'http://localhost:11434';
+    if (!isSafeEndpoint(rawEndpoint)) {
+      throw new Error('Invalid or restricted endpoint URL provided.');
+    }
+    const endpoint = rawEndpoint.replace(/\/$/, '');
+    let model = config?.model || config?.textModel || 'qwen3:8b';
 
     // Normalize any cloud model name passed mistakenly to Ollama
     if (
@@ -405,7 +420,7 @@ export async function executeAICompletion(
       let data: any = null;
       if (res.ok) {
         data = await res.json();
-        if (data.response) return data.response.trim();
+        if (data.response) return cleanModelResponse(data.response);
       }
 
       // If requested model was not found in Ollama, query /api/tags and retry with first available model
@@ -416,7 +431,7 @@ export async function executeAICompletion(
             const tagsData = await tagsRes.json();
             const available: string[] = (tagsData.models || []).map((m: any) => m.name || m.model || '');
             const fallbackModel =
-              available.find((m: string) => m.includes('llama') || m.includes('qwen') || m.includes('gemma')) ||
+              available.find((m: string) => m.includes('qwen') || m.includes('llama') || m.includes('gemma')) ||
               available[0];
 
             if (fallbackModel && fallbackModel !== model) {
@@ -436,7 +451,7 @@ export async function executeAICompletion(
               });
               if (retryRes.ok) {
                 const retryData = await retryRes.json();
-                if (retryData.response) return retryData.response.trim();
+                if (retryData.response) return cleanModelResponse(retryData.response);
               }
             }
           }
@@ -530,7 +545,7 @@ export async function executeAICompletion(
   }
 
   // 4. OmniRoute (Central AI router / Gateway)
-  if (provider === 'omniroute') {
+  if ((provider as string) === 'omniroute') {
     const rawEndpoint =
       config?.omniRouteEndpoint || process.env.OMNIROUTE_ENDPOINT || OMNIROUTE_DEFAULT_ENDPOINT;
     const endpoint = rawEndpoint.replace(/\/$/, '');
@@ -658,6 +673,7 @@ export function recommendModelForTask(
     linkedin: ['claude-3-5-sonnet', 'kimi', 'gpt-4o', 'deepseek-chat', 'glm-4'],
     strategist: ['deepseek-r1', 'o1', 'claude-3-5-sonnet', 'gpt-4o', 'gemini-1.5-pro'],
     competitor: ['gemini-1.5-flash', 'claude-3-5-sonnet', 'gpt-4o-mini', 'llama-3.1-8b'],
+    x_posts: ['qwen3:8b', 'qwen-2.5', 'llama-3.3', 'claude-3-5-sonnet', 'gpt-4o', 'kimi'],
   };
 
   const rationales: Record<ModelModule, string> = {
@@ -668,6 +684,7 @@ export function recommendModelForTask(
     linkedin: 'Polished professional tone, balanced insight, and platform-native conversational framing.',
     strategist: 'Deep analytical reasoning, multi-step problem solving, and strategic trade-off evaluation.',
     competitor: 'High-speed synthesis, concise summarization, and key takeaway distillation.',
+    x_posts: 'Punchy 280-character native tone, bold hooks, witty punchlines, and multi-post thread structuring.',
   };
 
   const targets = taskKeywords[task] || [];

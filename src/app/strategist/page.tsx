@@ -114,7 +114,7 @@ export default function StrategistPage() {
   return (
     <div className="space-y-8 pb-12">
       {/* Top Banner */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-neutral-900/60 border border-neutral-200/70 dark:border-neutral-800/70 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
@@ -156,7 +156,7 @@ export default function StrategistPage() {
           <span>Saved Research: <strong>{research.length} records</strong></span>
         </div>
         <span className="font-mono text-[11px] text-neutral-500">
-          Selected Model: <strong className="text-neutral-800 dark:text-neutral-200">{getModelForModule('strategist')}</strong> ({aiConfig.provider === 'omniroute' ? 'OmniRoute Gateway' : aiConfig.provider})
+          Selected Model: <strong className="text-neutral-800 dark:text-neutral-200">{getModelForModule('strategist')}</strong> ({aiConfig.provider === 'ollama' ? 'Local Ollama (qwen3:8b)' : aiConfig.provider})
         </span>
       </div>
 
@@ -202,7 +202,7 @@ export default function StrategistPage() {
           return (
             <div
               key={rec.id}
-              className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl shadow-xs overflow-hidden transition-all hover:border-neutral-300 dark:hover:border-neutral-700"
+              className="bg-white dark:bg-neutral-900/60 border border-neutral-200/70 dark:border-neutral-800/70 rounded-2xl shadow-2xs overflow-hidden transition-all duration-200 hover:border-neutral-300 dark:hover:border-neutral-700"
             >
               {/* Card Header (Summary) */}
               <div

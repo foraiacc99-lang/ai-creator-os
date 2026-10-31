@@ -106,7 +106,7 @@ export default function HomePage() {
   return (
     <div className="space-y-8 pb-12">
       {/* Top Banner: Creator Focus & Persona */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-neutral-900/60 border border-neutral-200/70 dark:border-neutral-800/70 rounded-2xl p-6 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 backdrop-blur-xs">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">

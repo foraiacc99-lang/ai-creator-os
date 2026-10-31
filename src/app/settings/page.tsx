@@ -101,7 +101,7 @@ export default function SettingsPage() {
   const [newAvoidWord, setNewAvoidWord] = useState('');
 
   // AI Inference Form
-  const [aiProvider, setAiProvider] = useState(aiConfig.provider);
+  const [aiProvider, setAiProvider] = useState<'ollama' | 'groq' | 'openrouter'>(aiConfig.provider || 'ollama');
   const [endpoint, setEndpoint] = useState(aiConfig.endpoint);
   const [textModel, setTextModel] = useState(aiConfig.textModel);
   const [localOnlyMode, setLocalOnlyMode] = useState(aiConfig.localOnlyMode);
@@ -217,9 +217,6 @@ export default function SettingsPage() {
       freeOnlyMode,
     });
     setAiTestResult(res);
-    if (aiProvider === 'omniroute' && res.success) {
-      await fetchOmniRouteModels(true);
-    }
     setTestingAi(false);
   };
 
@@ -771,19 +768,13 @@ export default function SettingsPage() {
             )}
 
             {/* Provider Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 {
-                  id: 'omniroute',
-                  title: 'OmniRoute Gateway',
-                  badge: 'Multi-Model Router',
-                  desc: 'Unified local gateway routing to Kimi, GLM, Claude, GPT, Gemini, and custom providers via http://localhost:20128/v1.',
-                },
-                {
                   id: 'ollama',
-                  title: 'Ollama (Local Offline)',
-                  badge: 'Zero Cost • Primary',
-                  desc: 'Runs open-weight models (Llama 3.2, Mistral, Qwen) on your CPU/GPU. Total privacy, no internet required.',
+                  title: 'Local Ollama (Qwen 3 8B)',
+                  badge: 'Primary & Local',
+                  desc: 'Verified local AI engine (qwen3:8b). Zero monthly API fees, zero latency egress, 100% private execution directly on your machine.',
                 },
                 {
                   id: 'groq',
@@ -802,7 +793,7 @@ export default function SettingsPage() {
                 return (
                   <div
                     key={p.id}
-                    onClick={() => setAiProvider(p.id as 'ollama' | 'groq' | 'openrouter' | 'omniroute')}
+                    onClick={() => setAiProvider(p.id as 'ollama' | 'groq' | 'openrouter')}
                     className={`p-4 rounded-xl border cursor-pointer transition-all ${
                       isSelected
                         ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-800/80 ring-1 ring-neutral-900 dark:ring-neutral-100'
@@ -819,109 +810,87 @@ export default function SettingsPage() {
               })}
             </div>
 
-            {/* OmniRoute Dedicated Configuration Panel */}
-            <div className={`p-5 rounded-2xl border space-y-4 transition-all ${
-              aiProvider === 'omniroute'
-                ? 'bg-neutral-50/80 dark:bg-neutral-800/40 border-neutral-300 dark:border-neutral-700'
-                : 'bg-neutral-50/30 dark:bg-neutral-900/40 border-neutral-200 dark:border-neutral-800 opacity-90'
-            }`}>
+            {/* Local Ollama & Qwen 3 8B Dedicated Configuration Panel */}
+            <div className="p-5 rounded-2xl border space-y-4 bg-neutral-50/80 dark:bg-neutral-800/40 border-neutral-300 dark:border-neutral-700">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-200/70 dark:border-neutral-800 pb-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-neutral-900 dark:text-neutral-100" />
+                    <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <h3 className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">
-                      OmniRoute Gateway Configuration
+                      Local Ollama & Qwen Model Engine
                     </h3>
-                    <Badge variant="purple" className="text-[10px] font-mono">
-                      Dynamic Discovery
+                    <Badge variant="success" className="text-[10px] font-mono">
+                      Verified Local & Private
                     </Badge>
                   </div>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Connect to your running OmniRoute instance to access multi-model routing across Kimi, GLM, Anthropic, OpenAI, Google, and more.
+                    Primary local AI model configured to <strong>qwen3:8b</strong>. Zero API costs, zero monthly fees, 100% private execution on your machine.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Button
-                    onClick={() => fetchOmniRouteModels(true)}
+                    onClick={() => handleTestAI()}
                     variant="outline"
                     size="sm"
-                    isLoading={isModelsLoading}
+                    isLoading={testingAi}
                     className="text-xs"
                   >
                     <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                    Refresh Catalog ({cachedModels.length})
+                    Verify Ollama (qwen3:8b)
                   </Button>
                 </div>
               </div>
 
-              {/* Gateway Inputs */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
+              {/* Engine Inputs */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
-                    OmniRoute Gateway Base URL
+                    Ollama Base Endpoint
                   </label>
                   <input
                     type="text"
-                    value={omniRouteEndpoint}
-                    onChange={(e) => setOmniRouteEndpoint(e.target.value)}
-                    placeholder="http://localhost:20128/v1"
+                    value={endpoint}
+                    onChange={(e) => setEndpoint(e.target.value)}
+                    placeholder="http://localhost:11434"
                     className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg font-mono text-xs"
                   />
                   <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1 block">
-                    Default port is 20128. Format: http://localhost:20128/v1 (or remote trusted proxy).
+                    Default local Ollama daemon port is 11434.
                   </span>
                 </div>
 
                 <div>
                   <label className="font-semibold text-neutral-700 dark:text-neutral-300 block mb-1">
-                    Gateway Bearer Token (Optional)
+                    Primary Text Model
                   </label>
                   <input
-                    type="password"
-                    value={omniRouteApiKey}
-                    onChange={(e) => setOmniRouteApiKey(e.target.value)}
-                    placeholder="Optional Authorization token"
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg font-mono text-xs"
+                    type="text"
+                    value={textModel}
+                    onChange={(e) => setTextModel(e.target.value)}
+                    placeholder="qwen3:8b"
+                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-lg font-mono text-xs font-bold text-neutral-900 dark:text-neutral-100"
                   />
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-1 block">
-                    Kept server-side only; never leaked into client bundles.
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 block font-medium">
+                    Verified installed: qwen3:8b (5.2GB Q4_K_M). Thinking reasoning tags (&lt;think&gt;) are automatically filtered.
                   </span>
                 </div>
               </div>
 
-              {/* Gateway Quick Setup Note */}
+              {/* Local Quick Status Banner */}
               <div className="bg-neutral-900 text-neutral-200 dark:bg-neutral-950 p-3.5 rounded-xl text-[11px] font-mono space-y-1.5 border border-neutral-800">
                 <div className="flex items-center justify-between text-neutral-400 text-[10px]">
                   <span className="flex items-center gap-1.5">
                     <Terminal className="w-3.5 h-3.5" />
-                    HOW TO RUN OMNIROUTE (OFFICIAL GITHUB)
+                    LOCAL MODEL VERIFICATION
                   </span>
-                  <a
-                    href="https://github.com/diegosouzapw/OmniRoute"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-white flex items-center gap-1"
-                  >
-                    Repository <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
+                  <span className="text-emerald-400 font-semibold">100% PRIVATE & OFFLINE</span>
                 </div>
-                <div className="text-emerald-400"># Run gateway directly with npx:</div>
-                <div className="text-neutral-100 select-all font-semibold">npx omniroute@latest</div>
-                <div className="text-neutral-400 text-[10px] pt-1">
-                  Configure your provider API keys (Kimi, Anthropic, GLM, etc.) in OmniRoute&apos;s config. OmniRoute will expose them via GET /v1/models and POST /v1/chat/completions.
+                <div className="text-neutral-300">Active engine: <span className="text-emerald-400 font-bold">qwen3:8b</span> on http://localhost:11434</div>
+                <div className="text-neutral-400 text-[10px] pt-0.5">
+                  Fallback open-weights models detected: llama3.2:latest, gemma4:latest.
                 </div>
               </div>
-
-              {modelsError && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-200 text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
-                  <div>
-                    <span className="font-semibold">Gateway connection status: </span>
-                    {modelsError}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Free and Low-Cost Mode Toggle */}

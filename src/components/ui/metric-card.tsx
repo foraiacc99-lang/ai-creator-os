@@ -27,7 +27,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   return (
     <div
       className={cn(
-        'bg-white border border-neutral-200/90 dark:bg-neutral-900/80 dark:border-neutral-800 rounded-xl p-5 shadow-xs hover:border-neutral-300 dark:hover:border-neutral-700 transition-all flex flex-col justify-between',
+        'bg-white dark:bg-neutral-900/50 border border-neutral-200/70 dark:border-neutral-800/70 rounded-2xl p-5 shadow-2xs hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 flex flex-col justify-between backdrop-blur-xs',
         className
       )}
     >

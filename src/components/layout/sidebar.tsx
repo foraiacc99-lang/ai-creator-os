@@ -24,6 +24,16 @@ import {
   Laptop,
 } from 'lucide-react';
 
+const XTwitterIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+  >
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
 const LinkedInIcon = ({ className }: { className?: string }) => (
   <svg
     className={className}
@@ -47,18 +57,20 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
-  const { ideas, calendar, scripts, linkedinPosts, aiConfig, theme, setTheme, preferences } = useApp();
+  const { ideas, calendar, scripts, linkedinPosts, xPosts, aiConfig, theme, setTheme, preferences } = useApp();
 
   const scriptReadyCount = scripts.filter((s) => s.status === 'ready_for_filming').length;
   const scheduledCount = calendar.filter((c) => c.status === 'Ready to Publish' || c.stage === 'Shooting').length;
   const ideasInboxCount = ideas.filter((i) => i.status === 'Inbox').length;
   const linkedInCount = (linkedinPosts || []).filter((p) => p.status === 'Ready to Publish' || p.status === 'Draft').length;
+  const xPostsCount = (xPosts || []).filter((p) => p.status === 'Ready to Publish' || p.status === 'Draft').length;
 
   const workspaceNav = [
     { name: 'Home', href: '/', icon: LayoutDashboard },
     { name: 'AI Strategist', href: '/strategist', icon: Sparkles, badge: 'AI' },
     { name: 'Content Ideas', href: '/ideas', icon: Lightbulb, count: ideasInboxCount > 0 ? ideasInboxCount : ideas.length },
     { name: 'Script Studio', href: '/scripts', icon: FileEdit, count: scriptReadyCount > 0 ? scriptReadyCount : undefined },
+    { name: 'X Posts', href: '/x', icon: XTwitterIcon, count: xPostsCount > 0 ? xPostsCount : undefined },
     { name: 'LinkedIn Posts', href: '/linkedin', icon: LinkedInIcon, count: linkedInCount > 0 ? linkedInCount : undefined },
     { name: 'Carousel & Stories', href: '/carousel', icon: Layers },
     { name: 'Competitor Research', href: '/competitor', icon: Search },
@@ -128,9 +140,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     href={item.href}
                     onClick={onClose}
                     className={cn(
-                      'flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors group',
+                      'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 group',
                       isActive
-                        ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950 shadow-2xs font-semibold'
+                        ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs font-semibold'
                         : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-900'
                     )}
                   >
@@ -187,9 +199,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     href={item.href}
                     onClick={onClose}
                     className={cn(
-                      'flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors group',
+                      'flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 group',
                       isActive
-                        ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950 shadow-2xs font-semibold'
+                        ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-xs font-semibold'
                         : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-900'
                     )}
                   >

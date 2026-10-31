@@ -73,7 +73,7 @@ export const CONTENT_PILLARS: PillarMetadata[] = [
   },
 ];
 
-export type ContentFormat = 'REELS' | 'CAROUSEL' | 'STORY' | 'SHORT_VIDEO' | 'POST' | 'LINKEDIN';
+export type ContentFormat = 'REELS' | 'CAROUSEL' | 'STORY' | 'SHORT_VIDEO' | 'POST' | 'LINKEDIN' | 'X_POST' | 'X_THREAD';
 
 export type IdeaStatus =
   | 'Inbox'
@@ -169,6 +169,191 @@ export interface ScriptItem {
   createdAt: string;
   updatedAt: string;
 }
+
+// ============================================================================
+// X (TWITTER) POST STUDIO TYPES
+// ============================================================================
+
+export type XWritingStyle =
+  | 'Casual'
+  | 'Savage'
+  | 'Professional'
+  | 'Funny / Humorous'
+  | 'Technical / Developer'
+  | 'Thought-Provoking'
+  | 'Educational'
+  | 'Build in Public'
+  | 'Personal / Reflective'
+  | 'Promotional / Product'
+  | 'Auto-select';
+
+export interface XCombinedStyle {
+  primary: XWritingStyle;
+  secondary?: XWritingStyle;
+}
+
+export type XNiche =
+  | 'AI tools and automation'
+  | 'AI agents'
+  | 'Open-source AI and GitHub'
+  | 'Coding and development'
+  | 'Website development'
+  | 'SEO'
+  | 'Sales and cold calling'
+  | 'Business and entrepreneurship'
+  | 'Build in public'
+  | 'Personal growth'
+  | 'Custom niche';
+
+export type XAudience =
+  | 'Developers'
+  | 'AI enthusiasts'
+  | 'Founders'
+  | 'Business owners'
+  | 'Freelancers'
+  | 'Agency owners'
+  | 'Students and beginners'
+  | 'Sales professionals'
+  | 'General technology audience'
+  | 'Custom audience';
+
+export type XObjective =
+  | 'Auto-select'
+  | 'Share an opinion'
+  | 'Teach something'
+  | 'Share a discovery'
+  | 'Explain a tool'
+  | 'Introduce a GitHub repository'
+  | 'Share a project update'
+  | 'Start a discussion'
+  | 'Make people laugh'
+  | 'Share a business lesson'
+  | 'Build professional credibility'
+  | 'Promote a project'
+  | 'Share a resource'
+  | 'Respond to an industry development';
+
+export type XFormatType =
+  | 'Auto-select'
+  | 'Single post'
+  | 'Short one-liner'
+  | 'Opinion or hot take'
+  | 'Question post'
+  | 'Educational post'
+  | 'Technical discovery'
+  | 'GitHub repository introduction'
+  | 'Tool recommendation'
+  | 'Build-in-public update'
+  | 'Personal lesson'
+  | 'Funny observation'
+  | 'Savage take'
+  | 'Mini case study'
+  | 'Problem-and-solution post'
+  | 'Promotional post'
+  | 'Multi-post thread'
+  | 'Reply to an existing post'
+  | 'Quote-post commentary'
+  | 'Custom format';
+
+export type XPostMode = 'single' | 'thread';
+
+export type XThreadCountOption = 'auto' | '3' | '5' | '7' | 'custom';
+
+export interface XThreadItem {
+  id: string;
+  order: number;
+  content: string;
+  charCount: number;
+  isWithinLimit: boolean;
+}
+
+export type XCTAType =
+  | 'No CTA'
+  | 'Ask a question'
+  | 'Invite discussion'
+  | 'Offer a relevant resource'
+  | 'Invite people to try a tool'
+  | 'Ask readers to share their experience'
+  | 'Custom CTA';
+
+export interface XCTASettings {
+  type: XCTAType;
+  customText?: string;
+  resourceKeyword?: string;
+  resourceName?: string;
+  resourceReady?: boolean;
+  verificationStatus?: 'Verified Ready' | 'Needs Preparation' | 'Not Checked';
+}
+
+export interface XResearchSource {
+  title: string;
+  url: string;
+  sourceName?: string;
+  snippet?: string;
+  repoMeta?: {
+    stars?: number;
+    license?: string;
+    maintenance?: string;
+    installation?: string;
+  };
+}
+
+export interface XQualityCheckItem {
+  id: string;
+  rule: string;
+  passed: boolean;
+  feedback: string;
+}
+
+export interface XQualityAudit {
+  charCount: number;
+  isWithinLimit: boolean;
+  hasClicheHooks: boolean;
+  hasFabricatedClaims: boolean;
+  readabilityScore: number;
+  checks: XQualityCheckItem[];
+  testedAt: string;
+}
+
+export interface XPostRecord {
+  id: string;
+  title: string;
+  mode: XPostMode;
+  topic: string;
+  niche: string;
+  contentPillar: ContentPillar;
+  targetAudience: string;
+  customAudience?: string;
+  postObjective: XObjective;
+  postFormat: XFormatType;
+  customFormatDescription?: string;
+  writingStyle: XWritingStyle;
+  secondaryWritingStyle?: XWritingStyle;
+  styleExplanation?: string;
+  userNotes?: string;
+  singlePostContent: string;
+  threadPosts: XThreadItem[];
+  threadCountTarget?: number | 'auto';
+  alternativeHooks?: string[];
+  alternativeVersions?: string[];
+  ctaSettings: XCTASettings;
+  isResearchEnabled?: boolean;
+  researchSummary?: string;
+  researchSources?: XResearchSource[];
+  sourceReference?: {
+    type: 'script' | 'idea' | 'linkedin' | 'research' | 'report';
+    id: string;
+    title: string;
+  };
+  status: 'Idea' | 'Draft' | 'Ready to Publish' | 'Scheduled' | 'Published';
+  plannedDate?: string;
+  plannedTime?: string;
+  calendarEntryId?: string;
+  qualityAudit?: XQualityAudit;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export interface ScriptReviewFeedback {
   hookClarity: { score: number; critique: string; suggestions: string[] };
@@ -379,6 +564,7 @@ export interface CalendarEntry {
   scriptId?: string;
   ideaId?: string;
   linkedInPostId?: string;
+  xPostId?: string;
   notes?: string;
   googleCalendarEventId?: string;
   isSyncedToGoogle?: boolean;
@@ -437,7 +623,7 @@ export interface AIRecommendation {
 }
 
 export interface AIProviderConfig {
-  provider: 'ollama' | 'groq' | 'openrouter' | 'omniroute';
+  provider: 'ollama' | 'groq' | 'openrouter';
   // Ollama
   endpoint: string;
   textModel: string;
@@ -705,6 +891,7 @@ export type ModelModule =
   | 'ideas'
   | 'carousel'
   | 'linkedin'
+  | 'x_posts'
   | 'strategist'
   | 'competitor';
 

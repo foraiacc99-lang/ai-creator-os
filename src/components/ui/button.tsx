@@ -11,14 +11,14 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, disabled, children, ...props }, ref) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] select-none cursor-pointer';
+      'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 focus:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] select-none cursor-pointer';
 
     const variantStyles = {
-      primary: 'bg-neutral-900 text-white hover:bg-neutral-800 shadow-sm dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100',
-      secondary: 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 border border-neutral-200 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700 dark:border-neutral-700',
-      outline: 'border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-50 shadow-xs dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800',
-      ghost: 'bg-transparent text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800',
-      danger: 'bg-rose-600 text-white hover:bg-rose-700 shadow-sm dark:bg-rose-700 dark:hover:bg-rose-600',
+      primary: 'bg-neutral-950 text-white hover:bg-neutral-800 shadow-xs dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-100 font-semibold',
+      secondary: 'bg-neutral-100/80 text-neutral-800 hover:bg-neutral-200/80 border border-neutral-200/60 dark:bg-neutral-800/70 dark:text-neutral-200 dark:hover:bg-neutral-700/80 dark:border-neutral-700/60',
+      outline: 'border border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/80 shadow-2xs',
+      ghost: 'bg-transparent text-neutral-600 hover:bg-neutral-100/80 dark:text-neutral-400 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-white',
+      danger: 'bg-rose-600 text-white hover:bg-rose-700 shadow-xs dark:bg-rose-600 dark:hover:bg-rose-500 font-semibold',
     };
 
     const sizeStyles = {
