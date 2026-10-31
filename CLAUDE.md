@@ -10,3 +10,4 @@
 2. **Repository Changes**: Always ask the user for confirmation before creating, deleting, or altering Git remotes or GitHub repositories.
 3. **Design Standard**: Maintain a minimalistic, clean, and modern UI aesthetic.
 4. **Security Standard**: All server-side fetch requests must pass `isSafeEndpoint()` to prevent SSRF.
+
